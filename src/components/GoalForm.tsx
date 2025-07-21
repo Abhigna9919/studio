@@ -15,6 +15,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Skeleton } from "./ui/skeleton";
 
 interface GoalFormProps {
   onPlanGenerated: (plan: string, values: GoalFormValues) => void;
@@ -24,21 +25,24 @@ interface GoalFormProps {
 
 export function GoalForm({ onPlanGenerated, onPlanError, getFinancialPlanAction }: GoalFormProps) {
   const [isLoading, setIsLoading] = React.useState(false);
+  const [isMounted, setIsMounted] = React.useState(false);
 
   const form = useForm<GoalFormValues>({
     resolver: zodResolver(goalFormSchema),
-    defaultValues: {
+  });
+
+  React.useEffect(() => {
+    setIsMounted(true);
+    const defaultDeadline = new Date();
+    defaultDeadline.setMonth(defaultDeadline.getMonth() + 6);
+    form.reset({
       goalAmount: 10000,
-      deadline: (() => {
-        const date = new Date();
-        date.setMonth(date.getMonth() + 6);
-        return date;
-      })(),
+      deadline: defaultDeadline,
       currentSavings: 1000,
       monthlyIncome: 5000,
       monthlyExpenses: 3000,
-    },
-  });
+    });
+  }, [form]);
 
   async function onSubmit(values: GoalFormValues) {
     setIsLoading(true);
@@ -56,6 +60,48 @@ export function GoalForm({ onPlanGenerated, onPlanError, getFinancialPlanAction 
     }
     setIsLoading(false);
   }
+
+  if (!isMounted) {
+    return (
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Target className="h-6 w-6 text-primary" />
+            <Skeleton className="h-6 w-48" />
+          </div>
+          <Skeleton className="h-4 w-64" />
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            <div className="space-y-2">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-10 w-full" />
+            </div>
+             <div className="space-y-2">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-10 w-full" />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-36" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+        </CardContent>
+        <CardFooter>
+          <Skeleton className="h-10 w-full" />
+        </CardFooter>
+      </Card>
+    );
+  }
+
 
   return (
     <Card>
