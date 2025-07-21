@@ -29,6 +29,11 @@ export function GoalForm({ onPlanGenerated, onPlanError, getFinancialPlanAction 
     resolver: zodResolver(goalFormSchema),
     defaultValues: {
       goalAmount: 10000,
+      deadline: (() => {
+        const date = new Date();
+        date.setMonth(date.getMonth() + 6);
+        return date;
+      })(),
       currentSavings: 1000,
       monthlyIncome: 5000,
       monthlyExpenses: 3000,
