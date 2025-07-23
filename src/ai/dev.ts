@@ -10,3 +10,4 @@ import '@/ai/flows/generate-financial-plan.ts';
 import '@/ai/flows/optimize-financial-plan.ts';
 import '@/ai/flows/get-financial-advice.ts';
 import '@/ai/flows/analyze-mf-portfolio.ts';
+import '@/ai/flows/analyze-stock-portfolio.ts';
