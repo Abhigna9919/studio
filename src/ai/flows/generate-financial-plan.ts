@@ -2,7 +2,7 @@
 'use server';
 
 /**
- * @fileOverview This file defines a Genkit flow for generating personalized financial plans based on user input.
+ * @fileOverview This file defines a Genkit flow for generating ultra-intelligent, personalized financial plans.
  *
  * - generateFinancialPlan - A function that takes user goals and market data to return a personalized investment plan.
  * - GenerateFinancialPlanInput - The input type for the generateFinancialPlan function.
@@ -27,20 +27,21 @@ const GenerateFinancialPlanInputSchema = z.object({
 export type GenerateFinancialPlanInput = z.infer<typeof GenerateFinancialPlanInputSchema>;
 
 
+const SIPPlanEntrySchema = z.object({
+    fundName: z.string().describe("The specific name of the mutual fund, e.g., 'Axis Bluechip Fund - Direct Growth'"),
+    amount: z.string().describe("The monthly SIP amount for this fund, e.g., '₹3,000'"),
+    reason: z.string().describe("The justification for choosing this fund, e.g., 'Large cap, 12.3% CAGR, ideal for medium-risk.'")
+});
+
 const GenerateFinancialPlanOutputSchema = z.object({
     goalType: z.enum(["Short-term", "Long-term"]).describe("The type of goal based on duration and amount."),
-    monthlyTarget: z.string().describe("The suggested monthly amount to be saved or invested."),
-    suggestedCuts: z.array(z.string()).describe("A list of suggested lifestyle spending cuts, e.g., 'Reduce Swiggy spends by ?1,500'"),
-    shortTermTips: z.string().optional().describe("For short-term goals, where to park money, e.g., 'Set up a Liquid Mutual Fund SIP.'"),
-    longTermPlan: z.object({
-        "Mutual Funds": z.string().optional(),
-        "FD": z.string().optional(),
-        "Gold": z.string().optional(),
-        "Stocks": z.string().optional(),
-        "Projection": z.string(),
-    }).optional().describe("For long-term goals, the detailed investment breakdown and projection."),
-    isGoalAchievable: z.boolean().describe("Whether the goal is achievable with the current plan."),
-    summary: z.string().describe("A witty, helpful paragraph that motivates the user."),
+    inflationAdjustedTarget: z.string().describe("The inflation-adjusted target amount, e.g., '₹13.5 Lakhs'"),
+    requiredMonthlyInvestment: z.string().describe("The calculated monthly investment needed to reach the goal."),
+    isUserBudgetSufficient: z.boolean().describe("Whether the user's provided monthly investment budget is sufficient."),
+    sipPlan: z.array(SIPPlanEntrySchema).describe("A detailed breakdown of the suggested SIPs across different funds."),
+    projectedCorpus: z.string().describe("The total projected corpus amount by the goal's deadline."),
+    transactionAdjustments: z.array(z.string()).describe("A list of suggested lifestyle spending cuts based on transaction history."),
+    summary: z.string().describe("A witty, helpful, and motivating summary of the plan for the user."),
 });
 export type GenerateFinancialPlanOutput = z.infer<typeof GenerateFinancialPlanOutputSchema>;
 
@@ -56,21 +57,24 @@ const generateFinancialPlanPrompt = ai.definePrompt({
     schema: GenerateFinancialPlanOutputSchema,
   },
   prompt: `
-    You are an intelligent financial agent for an Indian user. Your job is to deeply understand their goal, analyze their financial data, and suggest a clear, friendly, and strategic plan to help them reach it.
-    
-    Start by calling all available tools to get the user's full financial picture.
-    
-    Then, perform these tasks:
-    1.  **Classify the goal**: If the deadline is less than 2 years away OR the target amount is less than ?2,00,000, classify it as "Short-term". Otherwise, it's "Long-term".
-    2.  **Estimate monthly target**: Based on the target amount and deadline, calculate the required monthly savings.
-    3.  **Create a strategy based on goal type**:
-        *   **For Short-term goals**: Analyze bank transactions to find the biggest lifestyle spends (e.g., Swiggy, Zomato, Uber). Suggest specific, actionable cuts (e.g., "Reduce Swiggy spends by 50%"). Recommend where to park savings (e.g., Liquid Mutual Funds, FDs). The 'longTermPlan' field should be omitted for short-term goals.
-        *   **For Long-term goals**: Create an exhaustive investment plan. Allocate funds across Mutual Funds, Gold, FDs, and Stocks (only for 'High' risk) based on the user's risk profile. Use the AMFI data to pick top-performing instruments with their CAGR. Show the SIP breakdown. The 'shortTermTips' field should be omitted for long-term goals.
-    4.  **Projection**: Project the final corpus based on the plan.
-    5.  **Achievability**: State if the goal is achievable. If not, suggest what to adjust (e.g., increase monthly contribution, extend deadline).
-    6.  **Summary**: Write a witty, fun, and motivating summary to encourage the user.
+    You are an AI financial advisor helping an Indian Gen-Z user build an actionable, smart financial plan. Your role is to understand their goal, adjust for inflation, analyze their financial data, and suggest a real-world monthly investment strategy with specific fund names and justifications — all tailored to their risk appetite.
 
-    **User Goal:**
+    (You may assume inflation rate of 6.5%)
+
+    TASKS:
+    1. Classify the goal: Use time and amount to classify: < 2 years or < ₹2L → "Short-term" Else → "Long-term"
+    2. Adjust for Inflation: Use 6.5% annual inflation to calculate inflation-adjusted target. Show this clearly (e.g., “₹10L today → ₹13.5L by 2030”).
+    3. Determine Monthly Target: Calculate required monthly investment using standard FV formula. If monthlyInvestment is already given, say if it's enough. If not, suggest one.
+    4. Build SIP Plan Based on Risk:
+        - Low: 60% FD/Liquid MF, 30% Large Cap MF, 10% Gold
+        - Medium: 50% Multi-Cap MF, 20% FD, 20% Gold, 10% Midcap
+        - High: 60% Equity MF (Midcap/Smallcap), 30% Stocks, 10% Gold
+    5. Pick Specific Funds: Use market data to choose top-rated funds (real names from AMFI data). For each fund, show the SIP Amount and why this fund was chosen (e.g., “Consistent 12% CAGR, Large Cap, aligns with medium risk.”)
+    6. Projection: Show corpus amount expected by the deadline (based on CAGR). State if it is enough. If not, suggest adjustments (increase monthly investment, extend deadline, or reduce target).
+    7. Smart Adjustments: Check transaction history. If high discretionary spend (e.g., Swiggy, Blinkit), suggest lifestyle tweaks to divert money e.g., “Cut ₹1,500 on Zomato, invest instead”
+    8. Output Summary: Make it funny, witty, smart. User should feel motivated.
+
+    USER GOAL:
     - Title: {{{goal.title}}}
     - Target Amount: ?{{{goal.targetAmount}}}
     - Deadline: {{{goal.deadline}}}

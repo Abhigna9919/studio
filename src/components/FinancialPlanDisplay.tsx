@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import type { GoalFormValues, FinancialPlan } from "@/lib/schemas";
-import { DollarSign, Target, Calendar, Lightbulb, TrendingUp, Sparkles, PieChartIcon, CheckCircle, XCircle, ArrowDownCircle } from "lucide-react";
+import { DollarSign, Target, Calendar, TrendingUp, Sparkles, CheckCircle, XCircle, ArrowDownCircle, Info } from "lucide-react";
 import { format } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 import { Alert, AlertTitle, AlertDescription } from "./ui/alert";
@@ -14,103 +14,69 @@ interface FinancialPlanDisplayProps {
 
 const formatCurrency = (value: number | string) => {
     if (typeof value === 'string') {
-        const amountMatch = value.match(/₹[0-9,.]+/);
-        if (amountMatch) {
-            const amount = Number(amountMatch[0].replace(/[^0-9.-]+/g,""));
-             if (!isNaN(amount)) {
-                return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
-            }
+         const amount = Number(value.replace(/[^0-9.-]+/g,""));
+         if (!isNaN(amount)) {
+            return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
         }
-        return value;
+        return value; // Return as is if it doesn't contain a parsable number
     }
     return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value);
 }
 
-const GoalInfoCard = ({ goal }: { goal: GoalFormValues }) => (
-    <div className="space-y-4 rounded-lg border border-border/50 p-4 bg-background/30">
-        <div className="flex flex-col sm:flex-row sm:justify-between gap-4">
-            <div className="flex items-center gap-3">
-                <Target className="h-6 w-6 text-accent"/>
-                <span className="font-semibold text-lg">The Goal: {formatCurrency(goal.goalAmount)}</span>
-            </div>
-            <div className="flex items-center gap-3">
-                <Calendar className="h-6 w-6 text-accent"/>
-                <span className="font-semibold text-lg">The Deadline: {format(goal.deadline, "MMMM dd, yyyy")}</span>
-            </div>
-        </div>
-    </div>
+const InfoCard = ({ title, value, subtext }: {title: string, value: string, subtext?: string}) => (
+    <Card className="bg-background/30 border-border/50">
+        <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
+        </CardHeader>
+        <CardContent>
+            <p className="text-2xl font-bold">{value}</p>
+            {subtext && <p className="text-xs text-muted-foreground">{subtext}</p>}
+        </CardContent>
+    </Card>
 );
 
-const ShortTermPlanView = ({ plan }: { plan: FinancialPlan }) => (
-    <div className="space-y-6">
-        {plan.suggestedCuts && plan.suggestedCuts.length > 0 && (
-            <Card className="bg-background/30 border-border/50">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><ArrowDownCircle className="h-5 w-5 text-yellow-500" />Suggested Cuts</CardTitle>
-                    <CardDescription>A few small changes can make a big difference.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <ul className="list-disc list-inside space-y-1">
-                        {plan.suggestedCuts.map((cut, index) => <li key={index}>{cut}</li>)}
-                    </ul>
-                </CardContent>
-            </Card>
-        )}
-        {plan.shortTermTips && (
-             <Card className="bg-background/30 border-border/50">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><Lightbulb className="h-5 w-5 text-blue-500" />Short-Term Tips</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <p>{plan.shortTermTips}</p>
-                </CardContent>
-            </Card>
-        )}
-    </div>
+const SIPPlanTable = ({ plan }: { plan: FinancialPlan }) => (
+     <Card className="bg-background/30 border-border/50">
+        <CardHeader>
+            <CardTitle>Your Monthly SIP Plan</CardTitle>
+            <CardDescription>A tailored investment plan to meet your goals based on your risk profile.</CardDescription>
+        </CardHeader>
+        <CardContent>
+           <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Fund Name</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Reason</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {plan.sipPlan.map((sip) => (
+                  <TableRow key={sip.fundName}>
+                    <TableCell className="font-semibold">{sip.fundName}</TableCell>
+                    <TableCell className="font-semibold">{formatCurrency(sip.amount)}</TableCell>
+                    <TableCell>{sip.reason}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+        </CardContent>
+    </Card>
 );
 
-
-const LongTermPlanView = ({ plan }: { plan: FinancialPlan }) => {
-    const planDetails = plan.longTermPlan ? Object.entries(plan.longTermPlan).filter(([key]) => key !== 'Projection') : [];
-    
-    return (
-        <div className="space-y-6">
-            <Card className="bg-background/30 border-border/50">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><PieChartIcon className="h-5 w-5" />Investment Plan</CardTitle>
-                     <CardDescription>Your personalized asset allocation to reach your goal.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                   <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Asset</TableHead>
-                          <TableHead>Recommendation</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {planDetails.map(([asset, recommendation]) => (
-                          <TableRow key={asset}>
-                            <TableCell className="font-semibold">{asset}</TableCell>
-                            <TableCell>{recommendation}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
-             <Card className="bg-background/30 border-border/50">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-lg"><TrendingUp className="h-5 w-5" />Projected Returns</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-4xl font-bold text-primary">{plan.longTermPlan?.Projection}</p>
-                    <p className="text-sm text-muted-foreground">Based on your investment plan and market estimates.</p>
-                </CardContent>
-            </Card>
-        </div>
-    );
-};
+const AdjustmentsCard = ({ plan }: { plan: FinancialPlan }) => (
+    <Card className="bg-background/30 border-border/50">
+        <CardHeader>
+            <CardTitle className="flex items-center gap-2"><ArrowDownCircle className="h-5 w-5 text-yellow-500" />Smart Adjustments</CardTitle>
+            <CardDescription>A few tweaks to your spending can fast-track your goal.</CardDescription>
+        </CardHeader>
+        <CardContent>
+            <ul className="list-disc list-inside space-y-1">
+                {plan.transactionAdjustments.map((cut, index) => <li key={index}>{cut}</li>)}
+            </ul>
+        </CardContent>
+    </Card>
+);
 
 
 export function FinancialPlanDisplay({ plan, goal }: FinancialPlanDisplayProps) {
@@ -139,31 +105,38 @@ export function FinancialPlanDisplay({ plan, goal }: FinancialPlanDisplayProps) 
             <Badge variant={plan.goalType === 'Short-term' ? 'secondary' : 'default'}>{plan.goalType} Goal</Badge>
         </div>
       </CardHeader>
-      <CardContent className="space-y-8">
+      <CardContent className="space-y-6">
         
-        <GoalInfoCard goal={goal} />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <InfoCard title="Original Goal" value={formatCurrency(goal.goalAmount)} subtext={`by ${format(goal.deadline, "MMM yyyy")}`} />
+            <InfoCard title="Inflation-Adjusted Target" value={plan.inflationAdjustedTarget} subtext="at 6.5% annual inflation" />
+            <InfoCard title="Required Monthly SIP" value={plan.requiredMonthlyInvestment} subtext="to reach your adjusted target" />
+        </div>
+        
+        <Alert variant={plan.isUserBudgetSufficient ? "default" : "destructive"} className="bg-background/30 border-border/50">
+            {plan.isUserBudgetSufficient ? <CheckCircle className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
+            <AlertTitle>{plan.isUserBudgetSufficient ? "Your Budget is on Track!" : "Budget Adjustment Needed"}</AlertTitle>
+            <AlertDescription>
+                {plan.isUserBudgetSufficient ? `Your planned monthly investment of ${formatCurrency(goal.monthlyIncome || 0)} is enough.` : `Your budget of ${formatCurrency(goal.monthlyIncome || 0)} is less than the required ${plan.requiredMonthlyInvestment}. Consider the adjustments below.`}
+            </AlertDescription>
+        </Alert>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-           <div className="flex flex-col gap-6">
-                <Card className="bg-background/30 border-border/50">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+            <div className="lg:col-span-3">
+                <SIPPlanTable plan={plan} />
+            </div>
+             <div className="lg:col-span-2 space-y-4">
+                {plan.transactionAdjustments && plan.transactionAdjustments.length > 0 && <AdjustmentsCard plan={plan} />}
+                 <Card className="bg-background/30 border-border/50">
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><DollarSign className="h-5 w-5 text-green-500" />Monthly Target</CardTitle>
+                        <CardTitle className="flex items-center gap-2"><TrendingUp className="h-5 w-5" />Projected Corpus</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <p className="text-3xl font-bold">{formatCurrency(plan.monthlyTarget)}</p>
-                        <p className="text-sm text-muted-foreground">Is what you need to invest/save per month.</p>
+                        <p className="text-3xl font-bold text-primary">{plan.projectedCorpus}</p>
+                        <p className="text-sm text-muted-foreground">Based on your investment plan and market estimates.</p>
                     </CardContent>
                 </Card>
-                 <Alert variant={plan.isGoalAchievable ? "default" : "destructive"} className="bg-background/30 border-border/50">
-                    {plan.isGoalAchievable ? <CheckCircle className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
-                    <AlertTitle>{plan.isGoalAchievable ? "Goal is Achievable!" : "Goal May Be at Risk"}</AlertTitle>
-                    <AlertDescription>
-                        {plan.isGoalAchievable ? "You're on track to hit your goal. Keep it up!" : "Based on the current plan, you might fall short. Consider increasing your monthly contribution or extending the deadline."}
-                    </AlertDescription>
-                </Alert>
-           </div>
-           
-            {plan.goalType === 'Short-term' ? <ShortTermPlanView plan={plan} /> : <LongTermPlanView plan={plan} />}
+            </div>
         </div>
         
         <Alert className="bg-background/30 border-primary/20">

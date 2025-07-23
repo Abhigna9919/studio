@@ -18,7 +18,7 @@ export async function getFinancialPlanAction(values: z.infer<typeof ActionInputS
     const validatedValues = ActionInputSchema.parse(values);
     
     const monthlyInvestment = (validatedValues.monthlyIncome && validatedValues.monthlyIncome > 0) 
-      ? validatedValues.monthlyIncome * 0.3 
+      ? validatedValues.monthlyIncome
       : 25000;
 
     const planInput: GenerateFinancialPlanInput = {
