@@ -41,9 +41,9 @@ export function MarketNews() {
         <CardHeader>
             <div className='flex items-center gap-2'>
                 <Newspaper className='h-6 w-6 text-primary' />
-                <CardTitle>Market News</CardTitle>
+                <CardTitle>The Market Tea</CardTitle>
             </div>
-            <CardDescription>Latest financial news and market trends.</CardDescription>
+            <CardDescription>Stay in the loop with the latest money moves.</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4">
           {[...Array(3)].map((_, i) => (
@@ -104,9 +104,9 @@ export function MarketNews() {
       <CardHeader>
         <div className='flex items-center gap-2'>
             <Newspaper className='h-6 w-6 text-primary' />
-            <CardTitle>Market News</CardTitle>
+            <CardTitle>The Market Tea</CardTitle>
         </div>
-        <CardDescription>Latest financial news and market trends.</CardDescription>
+        <CardDescription>Stay in the loop with the latest money moves.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         {news.map(article => (

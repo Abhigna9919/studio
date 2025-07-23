@@ -9,7 +9,7 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AlertCircle, ArrowDown, ArrowUp, Banknote } from "lucide-react";
+import { AlertCircle, TrendingDown, TrendingUp, Wallet } from "lucide-react";
 import {
   ChartContainer,
   ChartTooltip,
@@ -124,32 +124,32 @@ export function FinancialDashboard({
         <div className="grid gap-6 md:grid-cols-3">
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total Net Worth</CardTitle>
-                    <Banknote className="h-4 w-4 text-muted-foreground" />
+                    <CardTitle className="text-sm font-medium">Your Net Worth</CardTitle>
+                    <Wallet className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold">{formatCurrency(totalNetWorthValue)}</div>
-                    <p className="text-xs text-muted-foreground">Your total financial value</p>
+                    <p className="text-xs text-muted-foreground">Your total financial flex</p>
                 </CardContent>
             </Card>
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total Assets</CardTitle>
-                    <ArrowUp className="h-4 w-4 text-green-500" />
+                    <CardTitle className="text-sm font-medium">Your Assets</CardTitle>
+                    <TrendingUp className="h-4 w-4 text-green-500" />
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold">{formatCurrency({ units: String(totalAssets) })}</div>
-                     <p className="text-xs text-muted-foreground">Sum of all your assets</p>
+                     <p className="text-xs text-muted-foreground">All your awesome stuff</p>
                 </CardContent>
             </Card>
              <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total Liabilities</CardTitle>
-                    <ArrowDown className="h-4 w-4 text-red-500" />
+                    <CardTitle className="text-sm font-medium">Your Liabilities</CardTitle>
+                    <TrendingDown className="h-4 w-4 text-red-500" />
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold">{formatCurrency({ units: String(totalLiabilities) })}</div>
-                    <p className="text-xs text-muted-foreground">Sum of all your debts</p>
+                    <p className="text-xs text-muted-foreground">The bills, but we'll crush 'em</p>
                 </CardContent>
             </Card>
         </div>

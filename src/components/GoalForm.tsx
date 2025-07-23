@@ -109,9 +109,9 @@ export function GoalForm({ onPlanGenerated, onPlanError, getFinancialPlanAction 
       <CardHeader>
         <div className="flex items-center gap-3">
             <Sparkles className="h-6 w-6 text-accent" />
-            <CardTitle className="font-headline text-2xl">Define Your Vibe</CardTitle>
+            <CardTitle className="font-headline text-2xl">What's the Financial Tea?</CardTitle>
         </div>
-        <CardDescription>Drop your goal details and let our AI cook up a fire financial plan for you.</CardDescription>
+        <CardDescription>Spill the deets on your goals. Our AI will cook up a fire plan for you.</CardDescription>
       </CardHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -223,7 +223,7 @@ export function GoalForm({ onPlanGenerated, onPlanError, getFinancialPlanAction 
                   Cooking...
                 </>
               ) : (
-                "Generate My Plan"
+                "Let's Get This Bread"
               )}
             </Button>
           </CardFooter>
