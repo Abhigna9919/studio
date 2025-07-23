@@ -1,3 +1,4 @@
+
 import { z } from 'zod';
 
 export const goalFormSchema = z.object({
@@ -272,7 +273,7 @@ const mfTransactionSchema = z.object({
     date: z.string(),
     schemeName: z.string(),
     folioNumber: z.string(),
-    type: z.string(),
+    type: z.enum(['PURCHASE', 'SELL']),
     amount: currencyValueSchema,
     units: z.string(),
     nav: currencyValueSchema,

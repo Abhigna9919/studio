@@ -1,6 +1,7 @@
+
 "use server";
 
-import { mfTransactionsResponseSchema, type MfTransactionsResponse } from "@/lib/schemas";
+import { mfTransactionsResponseSchema, type MfTransactionsResponse, type MfTransaction } from "@/lib/schemas";
 
 function extractAndParseJson(text: string): any {
   const jsonMatch = text.match(/{.*}/s);
@@ -9,11 +10,28 @@ function extractAndParseJson(text: string): any {
   }
   
   try {
-    return JSON.parse(jsonMatch[0]);
+    // The top-level response is JSON, but the actual data is a string inside.
+    const rpcResponse = JSON.parse(jsonMatch[0]);
+
+    if (rpcResponse.error || !rpcResponse.result || !rpcResponse.result.content) {
+      throw new Error(`RPC error: ${JSON.stringify(rpcResponse.error) || 'Invalid RPC response structure'}`);
+    }
+    
+    const nestedJsonString = rpcResponse.result.content[0]?.text;
+    if (!nestedJsonString) {
+        throw new Error("Could not find nested JSON in the RPC response.");
+    }
+    
+    return JSON.parse(nestedJsonString);
+
   } catch(e) {
     throw new Error(`Failed to parse the extracted JSON: ${e}`);
   }
 }
+
+const getTransactionType = (type: number): MfTransaction['type'] => {
+  return type === 1 ? 'PURCHASE' : 'SELL';
+};
 
 export async function fetchMfTransactionsAction(): Promise<{
   success: boolean;
@@ -48,21 +66,23 @@ export async function fetchMfTransactionsAction(): Promise<{
       );
     }
     
-    const rpcResponse = extractAndParseJson(responseText);
+    const rawData = extractAndParseJson(responseText);
 
-    if (rpcResponse.error || !rpcResponse.result || !rpcResponse.result.content) {
-      throw new Error(`RPC error: ${JSON.stringify(rpcResponse.error) || 'Invalid RPC response structure'}`);
-    }
+    const transformedTransactions: MfTransaction[] = rawData.mfTransactions.flatMap((fund: any) => 
+        fund.txns.map((txn: any[]) => ({
+            date: txn[1],
+            schemeName: fund.schemeName,
+            folioNumber: fund.folioId,
+            type: getTransactionType(txn[0]),
+            amount: { units: String(txn[4]) },
+            units: String(txn[3]),
+            nav: { units: String(txn[2]) }
+        }))
+    ).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     
-    const nestedJsonString = rpcResponse.result.content[0]?.text;
-    if (!nestedJsonString) {
-        throw new Error("Could not find nested JSON in the RPC response.");
-    }
-    
-    const rawData = JSON.parse(nestedJsonString);
-    
-    // The API response seems to be the data itself, so we can validate it directly.
-    const validatedData = mfTransactionsResponseSchema.parse(rawData);
+    const validatedData = mfTransactionsResponseSchema.parse({
+        transactions: transformedTransactions
+    });
     
     return { success: true, data: validatedData };
 
