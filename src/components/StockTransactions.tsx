@@ -51,8 +51,8 @@ const AnalysisCard = ({ analysis }: { analysis: StockAnalysisOutput }) => {
                  <div>
                     <h4 className="font-semibold mb-2">Top 5 Holdings</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 text-sm">
-                        {analysis.topHoldings.map(h => (
-                            <div key={h.stockName} className="p-2 bg-background rounded-md">
+                        {analysis.topHoldings.map((h, i) => (
+                            <div key={h.stockName + i} className="p-2 bg-background rounded-md">
                                 <p className="font-medium truncate">{h.stockName}</p>
                                 <p className="text-muted-foreground">Value: {formatCurrency(h.currentValue)}</p>
                             </div>
