@@ -211,5 +211,3 @@ export function FinancialDashboard({ fetchNetWorthAction, onDataError }: Financi
     </div>
   );
 }
-
-    
