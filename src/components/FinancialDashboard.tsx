@@ -4,8 +4,8 @@ import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { NetWorthData } from "@/app/dashboard/actions";
-import { BarChart, PieChart, TrendingUp, TrendingDown, Wallet, IndianRupee } from 'lucide-react';
-import { Pie, Cell, ResponsiveContainer, Bar, XAxis, YAxis, Tooltip } from 'recharts';
+import { BarChart, PieChart as PieChartIcon, TrendingUp, TrendingDown, Wallet, IndianRupee } from 'lucide-react';
+import { Pie, PieChart, Cell, ResponsiveContainer, Bar, BarChart as RechartsBarChart, XAxis, YAxis, Tooltip } from 'recharts';
 
 interface FinancialDashboardProps {
   fetchNetWorthAction: () => Promise<{ success: boolean; data?: NetWorthData; error?: string }>;
@@ -50,41 +50,74 @@ export function FinancialDashboard({ fetchNetWorthAction, onDataError }: Financi
     value: parseFloat(liability.value.units)
   })) || [];
 
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(value);
+  }
+
   if (isLoading) {
     return (
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <Card className="lg:col-span-3">
-          <CardHeader>
-            <Skeleton className="h-8 w-48" />
-            <Skeleton className="h-4 w-64" />
-          </CardHeader>
-          <CardContent>
-            <Skeleton className="h-24 w-full" />
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-6 w-32" />
-          </CardHeader>
-          <CardContent>
-            <Skeleton className="h-48 w-full" />
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-6 w-32" />
-          </CardHeader>
-          <CardContent>
-            <Skeleton className="h-48 w-full" />
-          </CardContent>
-        </Card>
-      </div>
+        <div className="space-y-6">
+            <Card>
+                <CardHeader>
+                    <Skeleton className="h-8 w-48" />
+                </CardHeader>
+                <CardContent>
+                    <Skeleton className="h-10 w-64" />
+                </CardContent>
+            </Card>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                <Card>
+                    <CardHeader>
+                        <Skeleton className="h-6 w-32" />
+                    </CardHeader>
+                    <CardContent>
+                        <Skeleton className="h-8 w-40" />
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader>
+                        <Skeleton className="h-6 w-32" />
+                    </CardHeader>
+                    <CardContent>
+                        <Skeleton className="h-8 w-40" />
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader>
+                         <Skeleton className="h-6 w-40" />
+                    </CardHeader>
+                    <CardContent>
+                        <Skeleton className="h-8 w-24" />
+                    </CardContent>
+                </Card>
+            </div>
+            <div className="grid gap-6 md:grid-cols-2">
+                <Card>
+                    <CardHeader>
+                        <Skeleton className="h-6 w-32" />
+                        <Skeleton className="h-4 w-48" />
+                    </CardHeader>
+                    <CardContent>
+                        <Skeleton className="h-[300px] w-full" />
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader>
+                        <Skeleton className="h-6 w-32" />
+                        <Skeleton className="h-4 w-48" />
+                    </CardHeader>
+                    <CardContent>
+                        <Skeleton className="h-[300px] w-full" />
+                    </CardContent>
+                </Card>
+            </div>
+        </div>
     );
   }
 
   if (!data) {
     return (
-        <Card className="h-full flex items-center justify-center min-h-[500px] border-dashed">
+        <Card className="h-full flex items-center justify-center min-h-[600px] border-dashed">
             <div className="text-center p-8">
                 <BarChart className="mx-auto h-12 w-12 text-muted-foreground" />
                 <h3 className="mt-4 text-lg font-medium font-headline">No Data Available</h3>
@@ -94,10 +127,6 @@ export function FinancialDashboard({ fetchNetWorthAction, onDataError }: Financi
             </div>
         </Card>
     )
-  }
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(value);
   }
 
   return (
@@ -169,12 +198,12 @@ export function FinancialDashboard({ fetchNetWorthAction, onDataError }: Financi
                 </CardHeader>
                 <CardContent>
                     <ResponsiveContainer width="100%" height={300}>
-                        <BarChart data={liabilitiesChartData}>
+                        <RechartsBarChart data={liabilitiesChartData}>
                             <XAxis dataKey="name" tickFormatter={value => value.length > 10 ? `${value.substring(0, 10)}...` : value} />
-                            <YAxis tickFormatter={(value: number) => formatCurrency(value)}/>
+                            <YAxis tickFormatter={(value) => typeof value === 'number' ? formatCurrency(value) : ''} />
                             <Tooltip formatter={(value: number) => formatCurrency(value)} />
                             <Bar dataKey="value" fill="#FF8042" />
-                        </BarChart>
+                        </RechartsBarChart>
                     </ResponsiveContainer>
                 </CardContent>
             </Card>
@@ -182,3 +211,5 @@ export function FinancialDashboard({ fetchNetWorthAction, onDataError }: Financi
     </div>
   );
 }
+
+    
