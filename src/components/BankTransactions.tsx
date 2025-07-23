@@ -109,6 +109,7 @@ export function BankTransactions() {
               <TableHead>Description</TableHead>
               <TableHead>Type</TableHead>
               <TableHead className="text-right">Amount</TableHead>
+              <TableHead className="text-right">Balance</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -118,7 +119,10 @@ export function BankTransactions() {
                 <TableCell>{transaction.account}</TableCell>
                 <TableCell className="max-w-xs truncate">{transaction.narration}</TableCell>
                 <TableCell>
-                  <Badge variant={transaction.transactionType === 'TRANSACTION_TYPE_CREDIT' ? 'default' : 'secondary'} className="capitalize">
+                   <Badge 
+                    variant={transaction.transactionType === 'TRANSACTION_TYPE_CREDIT' ? 'default' : 'secondary'} 
+                    className="capitalize"
+                  >
                      {transaction.transactionType === 'TRANSACTION_TYPE_CREDIT' ? 
                         <ArrowUpFromDot className='mr-1 h-3 w-3 text-green-400' /> : 
                         <ArrowDownToDot className='mr-1 h-3 w-3 text-red-400' />}
@@ -126,6 +130,7 @@ export function BankTransactions() {
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right font-medium">{formatCurrency(transaction.amount)}</TableCell>
+                 <TableCell className="text-right font-medium">{formatCurrency(transaction.currentBalance)}</TableCell>
               </TableRow>
             ))}
           </TableBody>

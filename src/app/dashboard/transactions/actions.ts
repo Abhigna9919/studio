@@ -1,6 +1,6 @@
 "use server";
 
-import { bankTransactionsResponseSchema, type BankTransactionsResponse } from "@/lib/schemas";
+import { bankTransactionsResponseSchema, type BankTransactionsResponse, type BankTransaction, type Transaction } from "@/lib/schemas";
 
 // Helper function to find and parse JSON from a streaming text response
 function extractAndParseJson(text: string): any {
@@ -15,6 +15,16 @@ function extractAndParseJson(text: string): any {
     throw new Error(`Failed to parse the extracted JSON: ${e}`);
   }
 }
+
+// Transaction type mapping from number to a readable string
+const getTransactionType = (type: number): Transaction['transactionType'] => {
+  switch (type) {
+    case 1: return 'TRANSACTION_TYPE_CREDIT';
+    case 2: return 'TRANSACTION_TYPE_DEBIT';
+    default: return 'TRANSACTION_TYPE_OTHER';
+  }
+};
+
 
 export async function fetchBankTransactionsAction(): Promise<{
   success: boolean;
@@ -59,9 +69,32 @@ export async function fetchBankTransactionsAction(): Promise<{
     if (!nestedJsonString) {
         throw new Error("Could not find nested JSON in the RPC response.");
     }
+    
+    // The actual data is a JSON string within the 'text' field
+    const rawData = JSON.parse(nestedJsonString);
+    
+    // Now, transform the raw array-based data into the structured format our components expect
+    const transformedData: BankTransactionsResponse = {
+      accountTransactions: rawData.bankTransactions.map((bankAcc: any, index: number) => {
+        const transactions: Transaction[] = bankAcc.txns.map((txn: any[], txnIndex: number) => ({
+          transactionId: `${bankAcc.bank}-${index}-${txnIndex}`, // Create a unique ID
+          amount: { units: txn[0] },
+          narration: txn[1],
+          transactionTimestamp: txn[2],
+          transactionType: getTransactionType(txn[3]),
+          transactionMode: txn[4],
+          currentBalance: { units: txn[5] },
+        }));
+        
+        return {
+          maskedAccountNumber: bankAcc.bank,
+          transactions: transactions,
+        };
+      })
+    };
 
-    const transactionsData = JSON.parse(nestedJsonString);
-    const validatedData = bankTransactionsResponseSchema.parse(transactionsData);
+    // Validate the transformed data with our schema
+    const validatedData = bankTransactionsResponseSchema.parse(transformedData);
     
     return { success: true, data: validatedData };
 

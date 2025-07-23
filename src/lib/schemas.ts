@@ -151,11 +151,12 @@ export type AccountDetailsBulkResponse = z.infer<typeof accountDetailsBulkRespon
 // Schemas for Bank Transactions
 const transactionSchema = z.object({
   transactionId: z.string(),
-  amount: currencyValueSchema,
-  transactionType: z.string(),
-  transactionMode: z.string(),
+  amount: currencyValueSchema.optional(),
+  transactionType: z.enum(['TRANSACTION_TYPE_CREDIT', 'TRANSACTION_TYPE_DEBIT', 'TRANSACTION_TYPE_OTHER']),
+  transactionMode: z.string().optional(),
   narration: z.string(),
   transactionTimestamp: z.string(),
+  currentBalance: currencyValueSchema.optional(),
 });
 export type Transaction = z.infer<typeof transactionSchema>;
 
@@ -163,7 +164,7 @@ const accountTransactionSchema = z.object({
   maskedAccountNumber: z.string(),
   transactions: z.array(transactionSchema),
 });
-export type AccountTransaction = z.infer<typeof accountTransactionSchema>;
+export type BankTransaction = z.infer<typeof accountTransactionSchema>;
 
 export const bankTransactionsResponseSchema = z.object({
   accountTransactions: z.array(accountTransactionSchema),
