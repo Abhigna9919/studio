@@ -36,34 +36,60 @@ export const getStockPriceTool = ai.defineTool(
     if (!apiKey) {
       throw new Error("EODHD API key is not configured.");
     }
-
-    const url = `https://eodhistoricaldata.com/api/search/${isin}?api_token=${apiKey}`;
     
+    // As the user is likely from India, we prioritize Indian exchanges.
+    const exchanges = ['NSE', 'BSE']; 
+
     try {
-      const response = await fetch(url);
+      for (const exchange of exchanges) {
+        const tickerListUrl = `https://eodhd.com/api/exchange-symbol-list/${exchange}?api_token=${apiKey}&fmt=json`;
+        const tickerResponse = await fetch(tickerListUrl);
+        
+        if (!tickerResponse.ok) {
+            console.warn(`Could not fetch symbol list for exchange ${exchange}. Status: ${tickerResponse.status}`);
+            continue; // Try next exchange
+        }
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Failed to fetch stock price from EOD Historical Data: ${response.statusText} - ${errorText}`);
+        const tickers = await tickerResponse.json();
+        const matchedTicker = tickers.find((t: any) => t.Isin === isin);
+
+        if (matchedTicker) {
+            const fundamentalsUrl = `https://eodhd.com/api/fundamentals/${matchedTicker.Code}.${exchange}?api_token=${apiKey}&fmt=json&filter=General`;
+            const fundamentalsResponse = await fetch(fundamentalsUrl);
+            
+            if (!fundamentalsResponse.ok) {
+                 console.warn(`Could not fetch fundamentals for ${isin} on exchange ${exchange}. Status: ${fundamentalsResponse.status}`);
+                 continue;
+            }
+
+            const fundamentals = await fundamentalsResponse.json();
+            const price = fundamentals?.MarketCapitalizationMln > 0 ? fundamentals?.Valuation?.TrailingPE * fundamentals?.Earnings?.History?.yearly?.[Object.keys(fundamentals.Earnings.History.yearly)[0]]?.epsActual : fundamentals?.Technicals?.previousClose;
+
+
+            if (typeof price === 'number' && price > 0) {
+              return { price };
+            }
+        }
       }
-
-      const data = await response.json();
       
-      // The search API returns an array, we'll take the first result.
-      const firstResult = data?.[0];
-      const price = firstResult?.previousClose;
-
-      if (typeof price !== 'number') {
-        // If the first result doesn't have a price, we can't proceed.
-        // It might be an invalid ISIN or not listed.
-        console.warn(`Could not find a valid 'previousClose' price in the API response for ISIN ${isin}.`);
-        return { price: 0 }; // Return 0 to avoid breaking the entire analysis.
+      // Fallback to the search API if not found in the primary exchanges
+      const searchUrl = `https://eodhistoricaldata.com/api/search/${isin}?api_token=${apiKey}&fmt=json`;
+      const searchResponse = await fetch(searchUrl);
+      if (searchResponse.ok) {
+          const searchData = await searchResponse.json();
+          const firstResult = searchData?.[0];
+          const price = firstResult?.previousClose;
+           if (typeof price === 'number') {
+            return { price };
+          }
       }
 
-      return { price };
+      console.warn(`Could not find price for ISIN ${isin} on any supported exchange or via search.`);
+      return { price: 0 };
+
     } catch (error) {
         console.error(`Error in getStockPriceTool for ${isin}:`, error);
-        // Silently fail for now to avoid breaking the whole analysis if one stock fails
+        // Silently fail to avoid breaking the whole analysis if one stock fails
         return { price: 0 };
     }
   }
