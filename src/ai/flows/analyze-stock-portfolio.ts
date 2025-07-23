@@ -59,7 +59,7 @@ const analyzeStockPortfolioPrompt = ai.definePrompt({
 
     1. **Analyze and Summarize:** Based on the fetched transactions, perform the following analysis:
         *   **Calculate Holdings:** For each unique stock (by ISIN), calculate the net quantity of shares held (total BUYs - total SELLs). Then, estimate the total invested amount.
-        *   **Fetch Live Prices:** Use the getStockPriceTool to fetch the current market price for each stock held.
+        *   **Fetch Live Prices:** Use the getStockPriceTool to fetch the current market price for each stock held by its ISIN.
         *   **Calculate Current Value:** Use the live price to calculate the current market value of each holding.
         *   **Identify Top 5 Holdings:** Based on the calculated current value, determine the top 5 largest stock holdings.
         *   **Estimate Sector Allocation:** Infer the sector for each stock based on its name or common knowledge (e.g., 'RELIANCE' is 'Energy/Conglomerate', 'HDFCBANK' is 'Banking'). Estimate the portfolio's allocation across these sectors.

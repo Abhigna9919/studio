@@ -22,48 +22,47 @@ import {fetchCreditReportAction} from '@/app/dashboard/credit-report/actions';
 export const getStockPriceTool = ai.defineTool(
   {
     name: 'getStockPrice',
-    description: 'Fetches the latest stock price for a given Indian stock ticker symbol from the exchange.',
+    description: 'Fetches the latest closing stock price for a given Indian stock ISIN from the exchange.',
     inputSchema: z.object({
-      ticker: z.string().describe('The NSE or BSE ticker symbol of the stock.'),
+      isin: z.string().describe('The ISIN of the stock.'),
     }),
     outputSchema: z.object({
       price: z.number(),
       currency: z.string().default('INR'),
     }),
   },
-  async ({ ticker }) => {
-    const apiKey = process.env.RAPIDAPI_KEY;
+  async ({ isin }) => {
+    const apiKey = process.env.EODHD_API_KEY;
     if (!apiKey) {
-      throw new Error("RapidAPI key is not configured.");
+      throw new Error("EODHD API key is not configured.");
     }
 
-    // IMPORTANT: Replace with the actual RapidAPI endpoint for Indian stocks
-    const url = `https://rapidapi.com/api/indian-stock-price-placeholder/details?symbol=${ticker}`;
+    const url = `https://eodhistoricaldata.com/api/search/${isin}?api_token=${apiKey}`;
     
     try {
-      const response = await fetch(url, {
-        headers: {
-          'X-RapidAPI-Key': apiKey,
-          'X-RapidAPI-Host': new URL(url).hostname,
-        }
-      });
+      const response = await fetch(url);
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`Failed to fetch stock price from RapidAPI: ${response.statusText} - ${errorText}`);
+        throw new Error(`Failed to fetch stock price from EOD Historical Data: ${response.statusText} - ${errorText}`);
       }
 
       const data = await response.json();
       
-      // IMPORTANT: Adjust the logic below to match the actual API response structure
-      const price = data?.price || data?.latestPrice || data?.currentPrice;
+      // The search API returns an array, we'll take the first result.
+      const firstResult = data?.[0];
+      const price = firstResult?.previousClose;
+
       if (typeof price !== 'number') {
-        throw new Error(`Could not find a valid price in the API response for ${ticker}.`);
+        // If the first result doesn't have a price, we can't proceed.
+        // It might be an invalid ISIN or not listed.
+        console.warn(`Could not find a valid 'previousClose' price in the API response for ISIN ${isin}.`);
+        return { price: 0 }; // Return 0 to avoid breaking the entire analysis.
       }
 
       return { price };
     } catch (error) {
-        console.error(`Error in getStockPriceTool for ${ticker}:`, error);
+        console.error(`Error in getStockPriceTool for ${isin}:`, error);
         // Silently fail for now to avoid breaking the whole analysis if one stock fails
         return { price: 0 };
     }
