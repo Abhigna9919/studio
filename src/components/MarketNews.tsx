@@ -7,27 +7,26 @@ import { useToast } from '@/hooks/use-toast';
 import type { MarketNewsArticle } from '@/lib/schemas';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from './ui/skeleton';
-import { AlertCircle, Newspaper, ExternalLink } from 'lucide-react';
+import { AlertCircle, Newspaper, ExternalLink, KeyRound } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import Image from 'next/image';
+import { Button } from './ui/button';
 
 export function MarketNews() {
   const { toast } = useToast();
   const [news, setNews] = useState<MarketNewsArticle[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
+      setError(null);
       const result = await fetchMarketNewsAction();
       if (result.success && result.data) {
         setNews(result.data);
       } else if (result.error) {
-        toast({
-          variant: "destructive",
-          title: "Failed to load market news",
-          description: result.error,
-        });
+        setError(result.error);
         setNews(null);
       }
       setIsLoading(false);
@@ -62,6 +61,27 @@ export function MarketNews() {
     );
   }
 
+  if (error && error.includes("Finnhub API key is not configured")) {
+    return (
+      <Card className="flex flex-col items-center justify-center min-h-[300px] text-center border-dashed">
+        <CardHeader>
+           <div className="mx-auto bg-amber-500/10 p-3 rounded-full">
+            <KeyRound className="h-8 w-8 text-amber-500" />
+          </div>
+          <CardTitle className="mt-4">Configure Market News</CardTitle>
+          <CardDescription>
+            To see the latest market news, please add your Finnhub API key to the `.env` file.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+           <a href="https://finnhub.io/register" target="_blank" rel="noopener noreferrer">
+             <Button>Get a Free API Key</Button>
+           </a>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (!news || news.length === 0) {
     return (
       <Card className="flex flex-col items-center justify-center min-h-[300px] text-center border-dashed">
@@ -72,7 +92,7 @@ export function MarketNews() {
           <CardTitle className="mt-4">No News Found</CardTitle>
           <CardDescription>
             Could not retrieve any market news. <br />
-            This might be due to an API key issue or network problem.
+            This might be due to an API issue or network problem.
           </CardDescription>
         </CardHeader>
       </Card>
