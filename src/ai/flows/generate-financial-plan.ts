@@ -116,7 +116,10 @@ const generateFinancialPlanFlow = ai.defineFlow(
   },
   async input => {
     // Step 1: Get the structured asset allocation from the AI.
-    const { output: allocationOutput } = await generateAllocationPrompt(input);
+    const allocationResponse = await generateAllocationPrompt(input);
+    console.log('Gemini Raw Response for Allocation:', JSON.stringify(allocationResponse, null, 2));
+
+    const allocationOutput = allocationResponse.output;
     if (!allocationOutput) {
         throw new Error("Failed to generate asset allocation.");
     }
