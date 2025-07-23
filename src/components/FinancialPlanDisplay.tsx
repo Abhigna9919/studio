@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import type { GoalFormValues, FinancialPlan } from "@/lib/schemas";
-import { DollarSign, Target, Calendar, TrendingUp, Sparkles, CheckCircle, XCircle, ArrowDownCircle, Info } from "lucide-react";
+import { DollarSign, Target, Calendar, TrendingUp, Sparkles, CheckCircle, XCircle, ArrowDownCircle, Info, GitCompareArrows } from "lucide-react";
 import { format } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 import { Alert, AlertTitle, AlertDescription } from "./ui/alert";
@@ -35,7 +35,10 @@ const InfoCard = ({ title, value, subtext }: {title: string, value: string, subt
     </Card>
 );
 
-const SIPPlanTable = ({ plan }: { plan: FinancialPlan }) => (
+const SIPPlanTable = ({ plan }: { plan: FinancialPlan }) => {
+    if (!plan.sipPlan || plan.sipPlan.length === 0) return null;
+
+    return (
      <Card className="bg-background/30 border-border/50">
         <CardHeader>
             <CardTitle>Your Monthly SIP Plan</CardTitle>
@@ -62,9 +65,14 @@ const SIPPlanTable = ({ plan }: { plan: FinancialPlan }) => (
             </Table>
         </CardContent>
     </Card>
-);
+    );
+};
 
-const AdjustmentsCard = ({ plan }: { plan: FinancialPlan }) => (
+
+const AdjustmentsCard = ({ plan }: { plan: FinancialPlan }) => {
+    if (!plan.transactionAdjustments || plan.transactionAdjustments.length === 0) return null;
+
+    return (
     <Card className="bg-background/30 border-border/50">
         <CardHeader>
             <CardTitle className="flex items-center gap-2"><ArrowDownCircle className="h-5 w-5 text-yellow-500" />Smart Adjustments</CardTitle>
@@ -76,7 +84,28 @@ const AdjustmentsCard = ({ plan }: { plan: FinancialPlan }) => (
             </ul>
         </CardContent>
     </Card>
-);
+    );
+}
+
+const PlanComparisonCard = ({ plan }: { plan: FinancialPlan }) => {
+    if (!plan.currentVsSuggestedPlanComparison) return null;
+
+    return (
+        <Card className="bg-background/30 border-border/50">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                    <GitCompareArrows className="h-5 w-5 text-blue-400" />
+                    Plan Comparison
+                </CardTitle>
+                <CardDescription>How the new plan stacks up against your current strategy.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <p className="text-sm italic text-muted-foreground">{plan.currentVsSuggestedPlanComparison}</p>
+            </CardContent>
+        </Card>
+    );
+};
+
 
 
 export function FinancialPlanDisplay({ plan, goal }: FinancialPlanDisplayProps) {
@@ -121,22 +150,21 @@ export function FinancialPlanDisplay({ plan, goal }: FinancialPlanDisplayProps) 
             </AlertDescription>
         </Alert>
 
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-            <div className="lg:col-span-3">
-                <SIPPlanTable plan={plan} />
-            </div>
-             <div className="lg:col-span-2 space-y-4">
-                {plan.transactionAdjustments && plan.transactionAdjustments.length > 0 && <AdjustmentsCard plan={plan} />}
-                 <Card className="bg-background/30 border-border/50">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><TrendingUp className="h-5 w-5" />Projected Corpus</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-3xl font-bold text-primary">{plan.projectedCorpus}</p>
-                        <p className="text-sm text-muted-foreground">Based on your investment plan and market estimates.</p>
-                    </CardContent>
-                </Card>
-            </div>
+        <div className="space-y-6">
+           <SIPPlanTable plan={plan} />
+           <PlanComparisonCard plan={plan} />
+           <AdjustmentsCard plan={plan} />
+            {plan.projectedCorpus && (
+            <Card className="bg-background/30 border-border/50">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><TrendingUp className="h-5 w-5" />Projected Corpus</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-3xl font-bold text-primary">{plan.projectedCorpus}</p>
+                    <p className="text-sm text-muted-foreground">Based on your investment plan and market estimates.</p>
+                </CardContent>
+            </Card>
+            )}
         </div>
         
         <Alert className="bg-background/30 border-primary/20">
