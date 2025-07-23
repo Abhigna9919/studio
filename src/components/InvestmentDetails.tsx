@@ -22,15 +22,28 @@ const formatCurrency = (value?: { units?: string | null; nanos?: number | null }
     }).format(number);
 };
 
-const formatAccountType = (type: string) => {
+const formatAccountType = (type: string | undefined) => {
+    if (!type) return "N/A";
     return type.replace(/^(ACC_INSTRUMENT_TYPE_|DEPOSIT_ACCOUNT_TYPE_)/, "").replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
 }
 
 export function InvestmentDetails({ accountDetails }: InvestmentDetailsProps) {
-    const accounts = Object.values(accountDetails.accountDetailsMap);
+    const accounts = accountDetails?.accountDetailsMap ? Object.values(accountDetails.accountDetailsMap) : [];
 
-    const equityHoldings = accounts.flatMap(acc => acc.equitySummary?.holdingsInfo.map(h => ({ ...h, account: acc.maskedAccountNumber })) || []);
-    const deposits = accounts.filter(acc => acc.depositSummary).map(acc => ({...acc.depositSummary!, account: acc.maskedAccountNumber, type: formatAccountType(acc.accInstrumentType)}));
+    const equityHoldings = accounts.flatMap(acc => 
+        acc.equitySummary?.holdingsInfo.map(h => ({ 
+            ...h, 
+            account: acc.accountDetails.maskedAccountNumber 
+        })) || []
+    );
+
+    const deposits = accounts
+        .filter(acc => acc.depositSummary)
+        .map(acc => ({
+            ...acc.depositSummary!, 
+            account: acc.accountDetails.maskedAccountNumber, 
+            type: formatAccountType(acc.accountDetails.accInstrumentType)
+        }));
     
   return (
     <Card>
@@ -60,9 +73,13 @@ export function InvestmentDetails({ accountDetails }: InvestmentDetailsProps) {
                           <div className="font-medium">{holding.issuerName}</div>
                           <div className="text-sm text-muted-foreground">{holding.isinDescription}</div>
                         </TableCell>
-                        <TableCell className="text-right">{holding.units.toFixed(2)}</TableCell>
+                        <TableCell className="text-right">{holding.units?.toFixed(2) ?? '0.00'}</TableCell>
                         <TableCell className="text-right">{formatCurrency(holding.lastTradedPrice)}</TableCell>
-                        <TableCell className="text-right">{formatCurrency({units: String(holding.units * parseFloat(holding.lastTradedPrice.units || '0'))})}</TableCell>
+                        <TableCell className="text-right">
+                          {formatCurrency({
+                            units: String((holding.units || 0) * parseFloat(holding.lastTradedPrice?.units || '0'))
+                          })}
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
