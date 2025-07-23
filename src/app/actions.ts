@@ -1,7 +1,7 @@
 "use server";
 
 import { z } from "zod";
-import { generateFinancialPlan, type GenerateFinancialPlanInput } from "@/ai/flows/generate-financial-plan";
+import { generateFinancialPlan, type GenerateFinancialPlanInput, type GenerateFinancialPlanOutput } from "@/ai/flows/generate-financial-plan";
 import { format } from 'date-fns';
 
 const ActionInputSchema = z.object({
@@ -12,7 +12,7 @@ const ActionInputSchema = z.object({
   monthlyExpenses: z.number().optional(),
 });
 
-export async function getFinancialPlanAction(values: z.infer<typeof ActionInputSchema>) {
+export async function getFinancialPlanAction(values: z.infer<typeof ActionInputSchema>): Promise<{ success: boolean; plan?: GenerateFinancialPlanOutput; error?: string; }> {
   try {
     const validatedValues = ActionInputSchema.parse(values);
     
@@ -22,7 +22,7 @@ export async function getFinancialPlanAction(values: z.infer<typeof ActionInputS
     };
 
     const result = await generateFinancialPlan(planInput);
-    return { success: true, plan: result.plan };
+    return { success: true, plan: result };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
     return { success: false, error: `Failed to generate financial plan: ${errorMessage}` };

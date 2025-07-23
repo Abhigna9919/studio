@@ -6,7 +6,7 @@ import React from "react";
 import { format } from "date-fns";
 import { CalendarIcon, Loader2, Target } from "lucide-react";
 
-import { goalFormSchema, type GoalFormValues } from "@/lib/schemas";
+import { goalFormSchema, type GoalFormValues, type FinancialPlan } from "@/lib/schemas";
 import { cn } from "@/lib/utils";
 
 import { Button } from "@/components/ui/button";
@@ -16,11 +16,12 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Skeleton } from "./ui/skeleton";
+import { GenerateFinancialPlanOutput } from "@/ai/flows/generate-financial-plan";
 
 interface GoalFormProps {
-  onPlanGenerated: (plan: string, values: GoalFormValues) => void;
+  onPlanGenerated: (plan: GenerateFinancialPlanOutput, values: GoalFormValues) => void;
   onPlanError: (error: string) => void;
-  getFinancialPlanAction: (values: Omit<GoalFormValues, 'currentSavings' | 'monthlyIncome' | 'monthlyExpenses'> & { currentSavings?: number; monthlyIncome?: number; monthlyExpenses?: number; }) => Promise<{ success: boolean; plan?: string; error?: string }>;
+  getFinancialPlanAction: (values: Omit<GoalFormValues, 'currentSavings' | 'monthlyIncome' | 'monthlyExpenses'> & { currentSavings?: number; monthlyIncome?: number; monthlyExpenses?: number; }) => Promise<{ success: boolean; plan?: GenerateFinancialPlanOutput; error?: string }>;
 }
 
 export function GoalForm({ onPlanGenerated, onPlanError, getFinancialPlanAction }: GoalFormProps) {

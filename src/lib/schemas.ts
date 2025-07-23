@@ -1,5 +1,5 @@
-
 import { z } from 'zod';
+import type { GenerateFinancialPlanOutput } from '@/ai/flows/generate-financial-plan';
 
 export const goalFormSchema = z.object({
   goalAmount: z.coerce.number().positive({ message: "Goal amount must be a positive number." }),
@@ -12,6 +12,7 @@ export const goalFormSchema = z.object({
 });
 
 export type GoalFormValues = z.infer<typeof goalFormSchema>;
+export type FinancialPlan = GenerateFinancialPlanOutput;
 
 
 // Schemas for the financial dashboard data from the API

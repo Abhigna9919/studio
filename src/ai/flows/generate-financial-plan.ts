@@ -36,8 +36,23 @@ const GenerateFinancialPlanInputSchema = z.object({
 });
 export type GenerateFinancialPlanInput = z.infer<typeof GenerateFinancialPlanInputSchema>;
 
+const ActionableStepSchema = z.object({
+  title: z.string().describe('A short, clear title for the action.'),
+  description: z.string().describe('A detailed explanation of the action to be taken.'),
+  category: z.enum(['Savings', 'Investment', 'Expense Management', 'Debt Management']).describe('The category of the action.'),
+});
+
+const AssetAllocationSchema = z.object({
+  assetClass: z.enum(['Equity', 'Debt', 'Gold', 'Real Estate', 'Other']).describe('The asset class.'),
+  currentAllocationPercentage: z.number().describe('The current percentage allocation in this asset class.'),
+  recommendedAllocationPercentage: z.number().describe('The recommended percentage allocation for this asset class to meet the goal.'),
+  justification: z.string().describe('The justification for the recommended allocation.')
+});
+
 const GenerateFinancialPlanOutputSchema = z.object({
-  plan: z.string().describe('A personalized financial plan with actionable steps.'),
+  monthlySavingsTarget: z.number().describe('The calculated monthly amount the user needs to save to reach their goal.'),
+  assetAllocationStrategy: z.array(AssetAllocationSchema).describe('A breakdown of recommended asset allocation.'),
+  actionableSteps: z.array(ActionableStepSchema).describe('A list of specific, actionable steps for the user to take.'),
 });
 export type GenerateFinancialPlanOutput = z.infer<typeof GenerateFinancialPlanOutputSchema>;
 
@@ -57,18 +72,19 @@ const generateFinancialPlanPrompt = ai.definePrompt({
     fetchEpfDetailsTool,
     fetchCreditReportTool,
   ],
-  prompt: `You are a financial advisor. Your task is to generate a personalized financial plan for a user to achieve their financial goal by a specific deadline.
+  prompt: `You are a financial advisor. Your task is to generate a personalized and actionable financial plan for a user to achieve their financial goal by a specific deadline.
 
 First, analyze the user's goal and deadline to determine if it's a short-term or long-term goal.
 
 Next, use the available tools to fetch the user's complete financial data, including their net worth, bank transactions, stock and mutual fund investments, EPF details, and credit report. This will give you a holistic view of their financial situation.
 
-Based on your comprehensive analysis of their goals and financial data, create a detailed and actionable financial plan. The plan MUST include:
-1.  **Monthly Savings Targets:** Calculate a realistic monthly amount the user needs to save.
-2.  **Smart Asset Allocation:** Recommend how to allocate their savings and existing investments.
-    - For short-term goals, prioritize low-risk investments (e.g., high-yield savings, short-term bonds).
-    - For long-term goals, suggest a diversified portfolio with a mix of equities and other growth assets, considering their existing holdings.
-3.  **Actionable Steps:** Provide a clear, step-by-step guide on what the user should do. This could include specific advice on reducing expenses (based on transaction history), consolidating debt (based on credit report), or rebalancing their investment portfolio.
+Based on your comprehensive analysis of their goals and financial data, create a detailed and actionable financial plan. The plan MUST be returned in the specified JSON format and include:
+1.  **Monthly Savings Target:** Calculate a realistic monthly amount the user needs to save. This should be a single number.
+2.  **Smart Asset Allocation:** Recommend how to allocate their savings and existing investments. Analyze their current asset allocation based on the fetched data (stocks, MFs, EPF, etc.) and recommend a new allocation suitable for their goal. Provide justification for your recommendations.
+3.  **Actionable Steps:** Provide a clear, step-by-step guide of what the user should do. These steps should be categorized and directly derived from the user's financial data. For example:
+    -   (Expense Management) Suggest reducing specific expenses based on their transaction history.
+    -   (Debt Management) Recommend consolidating debt based on their credit report.
+    -   (Investment) Suggest specific actions like increasing a SIP in a particular mutual fund they own, or selling an underperforming stock from their portfolio.
 
 User's Goal:
 Goal Amount: {{{goalAmount}}}
@@ -77,7 +93,7 @@ Current Savings: {{{currentSavings}}}
 Monthly Income: {{{monthlyIncome}}}
 Monthly Expenses: {{{monthlyExpenses}}}
 
-Generate a comprehensive plan that is easy to follow and empowers the user to reach their financial target.
+Generate a comprehensive, structured plan that is easy to follow and empowers the user to reach their financial target. Ensure the output strictly adheres to the 'GenerateFinancialPlanOutputSchema' JSON schema.
 `,
 });
 
