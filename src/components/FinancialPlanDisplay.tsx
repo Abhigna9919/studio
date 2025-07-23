@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import type { GoalFormValues, FinancialPlan } from "@/lib/schemas";
-import { DollarSign, Target, Calendar, Lightbulb, TrendingUp, ShieldCheck, ReceiptText, Bot, Sparkles } from "lucide-react";
+import { DollarSign, Target, Calendar, Lightbulb, TrendingUp, ShieldCheck, ReceiptText, Bot, Sparkles, PieChartIcon } from "lucide-react";
 import { format } from "date-fns";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Pie, PieChart, Cell } from "recharts";
@@ -12,14 +12,16 @@ interface FinancialPlanDisplayProps {
   goal: GoalFormValues | null;
 }
 
-const formatCurrency = (value: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
-
-const categoryIcons: { [key: string]: React.ElementType } = {
-  'Savings': DollarSign,
-  'Investment': TrendingUp,
-  'Expense Management': ReceiptText,
-  'Debt Management': ShieldCheck,
-};
+const formatCurrency = (value: number | string) => {
+    if (typeof value === 'string') {
+        const amount = Number(value.replace(/[^0-9.-]+/g,""));
+        if (!isNaN(amount)) {
+            return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amount);
+        }
+        return value; // return string as is if it's not a currency
+    }
+    return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(value);
+}
 
 const COLORS = ["hsl(var(--chart-1))", "hsl(var(--chart-2))", "hsl(var(--chart-3))", "hsl(var(--chart-4))", "hsl(var(--chart-5))"];
 
@@ -38,19 +40,15 @@ export function FinancialPlanDisplay({ plan, goal }: FinancialPlanDisplayProps) 
     );
   }
 
-  const currentSavings = goal.currentSavings ? Number(goal.currentSavings) : 0;
-  const progress = goal.goalAmount > 0 ? (currentSavings / goal.goalAmount) * 100 : 0;
-  
-  const allocationData = plan.assetAllocationStrategy.map(a => ({
-      name: a.assetClass.replace(/_/g, " "),
-      value: a.recommendedAllocationPercentage,
-      current: a.currentAllocationPercentage,
+  const allocationData = Object.entries(plan.assetAllocation).map(([name, value]) => ({
+      name,
+      value: Number(value.replace(/[^0-9.-]+/g,"")),
   }));
 
   return (
     <Card className="h-full bg-gradient-to-br from-card to-secondary/30 border-border/50">
       <CardHeader>
-        <CardTitle className="font-headline text-3xl font-black tracking-tighter">Your Financial Glow Up</CardTitle>
+        <CardTitle className="font-headline text-3xl font-black tracking-tighter">Your Financial Glow Up for {goal.title}</CardTitle>
         <CardDescription className="text-lg">This is the way. Your personalized path to the bag.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-8">
@@ -66,37 +64,18 @@ export function FinancialPlanDisplay({ plan, goal }: FinancialPlanDisplayProps) 
                     <span className="font-semibold text-lg">The Deadline: {format(goal.deadline, "MMMM dd, yyyy")}</span>
                 </div>
             </div>
-             <div>
-                <div className="mb-2 flex justify-between items-center">
-                    <span className="text-sm font-medium text-muted-foreground">Progress Mode</span>
-                    <span className="text-sm font-bold text-primary">{progress.toFixed(1)}%</span>
-                </div>
-                <Progress value={progress} className="w-full h-3" />
-                <div className="mt-2 text-right text-xs text-muted-foreground">
-                    Currently stashed: {formatCurrency(currentSavings)}
-                </div>
-            </div>
         </div>
         
         {/* Monthly Target & Allocation */}
         <div className="grid md:grid-cols-2 gap-6">
             <Card className="bg-background/30 border-border/50">
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-lg"><DollarSign className="h-5 w-5" />Your Monthly Mission</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-4xl font-bold text-primary">{formatCurrency(plan.monthlySavingsTarget)}</p>
-                    <p className="text-sm text-muted-foreground">Lock this in monthly. You got this.</p>
-                </CardContent>
-            </Card>
-            <Card className="bg-background/30 border-border/50">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-lg"><TrendingUp className="h-5 w-5" />Smart Asset Mix</CardTitle>
+                    <CardTitle className="flex items-center gap-2 text-lg"><PieChartIcon className="h-5 w-5" />Asset Allocation</CardTitle>
                 </CardHeader>
                 <CardContent className="flex justify-center">
                      <ChartContainer config={{}} className="min-h-[150px] w-full max-w-[250px]">
                         <PieChart>
-                            <ChartTooltip content={<ChartTooltipContent nameKey="name" hideLabel />} />
+                            <ChartTooltip content={<ChartTooltipContent nameKey="name" formatter={(value, name) => [formatCurrency(value as number), name]} />} />
                             <Pie data={allocationData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={40} outerRadius={60} paddingAngle={5} strokeWidth={2}>
                                 {allocationData.map((entry, index) => (
                                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -106,32 +85,33 @@ export function FinancialPlanDisplay({ plan, goal }: FinancialPlanDisplayProps) 
                     </ChartContainer>
                 </CardContent>
             </Card>
+             <Card className="bg-background/30 border-border/50">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-lg"><TrendingUp className="h-5 w-5" />Projected Returns</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-4xl font-bold text-primary">{plan.projectedReturns}</p>
+                    <p className="text-sm text-muted-foreground">Vibes are good, returns looking solid.</p>
+                </CardContent>
+            </Card>
         </div>
 
         {/* Actionable Steps */}
         <div>
           <h3 className="text-2xl font-bold mb-4 font-headline flex items-center gap-3"><Lightbulb className="text-accent" />The Game Plan</h3>
-          <div className="space-y-4">
-            {plan.actionableSteps.map((step, index) => {
-              const Icon = categoryIcons[step.category] || Lightbulb;
-              return (
-                <Card key={index} className="bg-background/30 border-border/50 hover:border-primary/50 transition-colors duration-300">
-                  <CardHeader className="p-4">
+            <Card className="bg-background/30 border-border/50 hover:border-primary/50 transition-colors duration-300">
+                <CardHeader className="p-4">
                     <CardTitle className="flex items-center gap-3 text-base">
                         <span className={`flex h-8 w-8 items-center justify-center rounded-full bg-primary/10`}>
-                            <Icon className="h-5 w-5 text-primary" />
+                            <Bot className="h-5 w-5 text-primary" />
                         </span>
-                        {step.title}
-                        <Badge variant="secondary" className="ml-auto">{step.category.replace(/([A-Z])/g, ' $1').trim()}</Badge>
+                        AI Summary
                     </CardTitle>
-                  </CardHeader>
-                  <CardContent className="px-4 pb-4">
-                    <p className="text-sm text-muted-foreground">{step.description}</p>
-                  </CardContent>
-                </Card>
-              )
-            })}
-          </div>
+                </CardHeader>
+                <CardContent className="px-4 pb-4">
+                <p className="text-sm text-muted-foreground">{plan.summary}</p>
+                </CardContent>
+            </Card>
         </div>
       </CardContent>
     </Card>

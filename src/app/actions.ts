@@ -5,20 +5,36 @@ import { generateFinancialPlan, type GenerateFinancialPlanInput, type GenerateFi
 import { format } from 'date-fns';
 
 const ActionInputSchema = z.object({
-  goalAmount: z.number(),
+  title: z.string(),
+  risk: z.enum(['Low', 'Medium', 'High']),
+  goalAmount: z.coerce.number(),
   deadline: z.date(),
-  currentSavings: z.number().optional(),
-  monthlyIncome: z.number().optional(),
-  monthlyExpenses: z.number().optional(),
+  monthlyIncome: z.coerce.number().optional(), // This can be used to derive monthly investment
 });
 
 export async function getFinancialPlanAction(values: z.infer<typeof ActionInputSchema>): Promise<{ success: boolean; plan?: GenerateFinancialPlanOutput; error?: string; }> {
   try {
     const validatedValues = ActionInputSchema.parse(values);
     
+    // For now, let's derive monthly investment from income, or use a default.
+    // This can be replaced with a form field later.
+    const monthlyInvestment = validatedValues.monthlyIncome ? validatedValues.monthlyIncome * 0.3 : 25000;
+
     const planInput: GenerateFinancialPlanInput = {
-      ...validatedValues,
-      deadline: format(validatedValues.deadline, 'yyyy-MM-dd'),
+      goal: {
+        title: validatedValues.title,
+        deadline: format(validatedValues.deadline, 'yyyy-MM-dd'),
+        risk: validatedValues.risk,
+        monthlyInvestment: monthlyInvestment,
+        targetAmount: validatedValues.goalAmount,
+      },
+      // Using placeholder data for market info as requested.
+      // In a real app, this would be fetched from live APIs.
+      top_mf_data: "Mirae Asset Large Cap: 12% CAGR, moderate risk; Parag Parikh Flexi Cap: 15% CAGR, medium-high risk",
+      top_fd_data: "SBI FD: 7.25%, safe; HDFC FD: 7.5%, safe",
+      gold_price: "6500",
+      top_stock_data: "Tata Consumer: 11% CAGR, mid-cap; Reliance Industries: 14% CAGR, large-cap",
+      mcp_summary: "User has some existing investments in mutual funds and stocks."
     };
 
     const result = await generateFinancialPlan(planInput);

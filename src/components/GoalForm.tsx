@@ -6,7 +6,7 @@ import React from "react";
 import { format } from "date-fns";
 import { CalendarIcon, Loader2, Sparkles } from "lucide-react";
 
-import { goalFormSchema, type GoalFormValues, type FinancialPlan } from "@/lib/schemas";
+import { goalFormSchema, type GoalFormValues } from "@/lib/schemas";
 import { cn } from "@/lib/utils";
 
 import { Button } from "@/components/ui/button";
@@ -17,11 +17,12 @@ import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Skeleton } from "./ui/skeleton";
 import { GenerateFinancialPlanOutput } from "@/ai/flows/generate-financial-plan";
+import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 
 interface GoalFormProps {
   onPlanGenerated: (plan: GenerateFinancialPlanOutput, values: GoalFormValues) => void;
   onPlanError: (error: string) => void;
-  getFinancialPlanAction: (values: Omit<GoalFormValues, 'currentSavings' | 'monthlyIncome' | 'monthlyExpenses'> & { currentSavings?: number; monthlyIncome?: number; monthlyExpenses?: number; }) => Promise<{ success: boolean; plan?: GenerateFinancialPlanOutput; error?: string }>;
+  getFinancialPlanAction: (values: GoalFormValues) => Promise<{ success: boolean; plan?: GenerateFinancialPlanOutput; error?: string }>;
 }
 
 export function GoalForm({ onPlanGenerated, onPlanError, getFinancialPlanAction }: GoalFormProps) {
@@ -35,25 +36,19 @@ export function GoalForm({ onPlanGenerated, onPlanError, getFinancialPlanAction 
   React.useEffect(() => {
     setIsMounted(true);
     const defaultDeadline = new Date();
-    defaultDeadline.setMonth(defaultDeadline.getMonth() + 12);
+    defaultDeadline.setFullYear(defaultDeadline.getFullYear() + 5);
     form.reset({
-      goalAmount: 25000,
+      title: "Buy a new car",
+      goalAmount: 1000000,
       deadline: defaultDeadline,
-      currentSavings: 5000,
-      monthlyIncome: 6000,
-      monthlyExpenses: 2500,
+      risk: "Medium",
+      monthlyIncome: 75000,
     });
   }, [form]);
 
   async function onSubmit(values: GoalFormValues) {
     setIsLoading(true);
-    const submissionValues = {
-        ...values,
-        currentSavings: values.currentSavings ? Number(values.currentSavings) : undefined,
-        monthlyIncome: values.monthlyIncome ? Number(values.monthlyIncome) : undefined,
-        monthlyExpenses: values.monthlyExpenses ? Number(values.monthlyExpenses) : undefined,
-    }
-    const result = await getFinancialPlanAction(submissionValues);
+    const result = await getFinancialPlanAction(values);
     if (result.success && result.plan) {
       onPlanGenerated(result.plan, values);
     } else if (result.error) {
@@ -118,12 +113,25 @@ export function GoalForm({ onPlanGenerated, onPlanError, getFinancialPlanAction 
           <CardContent className="space-y-6">
             <FormField
               control={form.control}
+              name="title"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Goal Title</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g., Buy a new gaming PC" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+             <FormField
+              control={form.control}
               name="goalAmount"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>The Goal ($)</FormLabel>
+                  <FormLabel>The Goal (₹)</FormLabel>
                   <FormControl>
-                    <Input type="number" placeholder="10000" {...field} />
+                    <Input type="number" placeholder="100000" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -170,60 +178,72 @@ export function GoalForm({ onPlanGenerated, onPlanError, getFinancialPlanAction 
                 </FormItem>
               )}
             />
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                <FormField
-                control={form.control}
-                name="currentSavings"
-                render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>Current Stash ($)</FormLabel>
-                    <FormControl>
-                        <Input type="number" placeholder="1000" {...field} />
-                    </FormControl>
-                    <FormDescription>Optional, but helps</FormDescription>
-                    <FormMessage />
-                    </FormItem>
-                )}
-                />
-                <FormField
+             <FormField
                 control={form.control}
                 name="monthlyIncome"
                 render={({ field }) => (
                     <FormItem>
-                    <FormLabel>Monthly Flow ($)</FormLabel>
+                    <FormLabel>Monthly Flow (₹)</FormLabel>
                     <FormControl>
-                        <Input type="number" placeholder="5000" {...field} />
+                        <Input type="number" placeholder="50000" {...field} />
                     </FormControl>
-                    <FormDescription>Optional</FormDescription>
+                    <FormDescription>Optional, helps in suggesting monthly investment</FormDescription>
                     <FormMessage />
                     </FormItem>
                 )}
                 />
-            </div>
-             <FormField
+            <FormField
               control={form.control}
-              name="monthlyExpenses"
+              name="risk"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Monthly Burn ($)</FormLabel>
+                <FormItem className="space-y-3">
+                  <FormLabel>Risk Appetite</FormLabel>
                   <FormControl>
-                    <Input type="number" placeholder="3000" {...field} />
+                    <RadioGroup
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      className="flex flex-col space-y-1"
+                    >
+                      <FormItem className="flex items-center space-x-3 space-y-0">
+                        <FormControl>
+                          <RadioGroupItem value="Low" />
+                        </FormControl>
+                        <FormLabel className="font-normal">
+                          Low - Chill vibes, slow and steady
+                        </FormLabel>
+                      </FormItem>
+                      <FormItem className="flex items-center space-x-3 space-y-0">
+                        <FormControl>
+                          <RadioGroupItem value="Medium" />
+                        </FormControl>
+                        <FormLabel className="font-normal">
+                          Medium - Balanced, a bit of spice
+                        </FormLabel>
+                      </FormItem>
+                      <FormItem className="flex items-center space-x-3 space-y-0">
+                        <FormControl>
+                          <RadioGroupItem value="High" />
+                        </FormControl>
+                        <FormLabel className="font-normal">
+                          High - All in, high-key risky
+                        </FormLabel>
+                      </FormItem>
+                    </RadioGroup>
                   </FormControl>
-                  <FormDescription>Optional</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
           </CardContent>
           <CardFooter>
-            <Button type="submit" disabled={isLoading} size="lg" className="w-full font-bold text-lg bg-primary hover:bg-primary/90">
+            <Button type="submit" disabled={isLoading} className="w-full text-lg font-bold py-6">
               {isLoading ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                   Cooking...
                 </>
               ) : (
-                "Let's Get This Bread"
+                 "Generate My Plan"
               )}
             </Button>
           </CardFooter>

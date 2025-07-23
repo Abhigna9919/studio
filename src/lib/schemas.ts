@@ -2,13 +2,13 @@ import { z } from 'zod';
 import type { GenerateFinancialPlanOutput } from '@/ai/flows/generate-financial-plan';
 
 export const goalFormSchema = z.object({
+  title: z.string().min(3, { message: "Goal title must be at least 3 characters." }),
   goalAmount: z.coerce.number().positive({ message: "Goal amount must be a positive number." }),
   deadline: z.date({
     required_error: "A deadline is required.",
   }),
-  currentSavings: z.coerce.number().nonnegative({message: "Current savings must be a positive number."}).optional().or(z.literal('')),
+  risk: z.enum(['Low', 'Medium', 'High'], { required_error: "Please select your risk appetite." }),
   monthlyIncome: z.coerce.number().nonnegative({message: "Monthly income must be a positive number."}).optional().or(z.literal('')),
-  monthlyExpenses: z.coerce.number().nonnegative({message: "Monthly expenses must be a positive number."}).optional().or(z.literal('')),
 });
 
 export type GoalFormValues = z.infer<typeof goalFormSchema>;
@@ -314,7 +314,6 @@ const marketNewsArticleSchema = z.object({
   source: z.string(),
   datetime: z.number(),
 });
+export type MarketNewsArticle = z.infer<typeof marketNewsArticleSchema>;
 
 export const marketNewsResponseSchema = z.array(marketNewsArticleSchema);
-
-export type MarketNewsArticle = z.infer<typeof marketNewsArticleSchema>;
