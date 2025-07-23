@@ -65,13 +65,13 @@ export async function fetchNetWorthAction(): Promise<{ success: boolean; data?: 
 
         const rawData = JSON.parse(finalJsonString);
         
-        // The actual API response is nested inside the 'result' of the 'result'
-        if (rawData.result && rawData.result.result) {
-            const nestedJson = JSON.parse(rawData.result.result);
+        // The actual API response is nested inside the 'result'
+        if (rawData.result) {
+            const nestedJson = JSON.parse(rawData.result);
             const validatedData = ApiResponseSchema.parse(nestedJson);
             return { success: true, data: validatedData.netWorthResponse };
         } else {
-             throw new Error("Invalid API response structure: 'result.result' not found.");
+             throw new Error("Invalid API response structure: 'result' not found.");
         }
     } catch(e) {
         console.error("Failed to parse JSON response:", textData);
