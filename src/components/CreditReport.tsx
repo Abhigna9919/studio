@@ -21,9 +21,9 @@ const formatCurrency = (value?: { units?: string | null; nanos?: number | null }
     if (isNaN(number)) {
         return fallback;
     }
-    return new Intl.NumberFormat("en-US", {
+    return new Intl.NumberFormat("en-IN", {
         style: "currency",
-        currency: "USD",
+        currency: "INR",
     }).format(number);
 };
 

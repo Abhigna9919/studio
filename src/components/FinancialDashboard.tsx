@@ -36,7 +36,7 @@ const formatAttributeName = (name: string) => {
     .replace(/\b\w/g, (char) => char.toUpperCase());
 };
 
-const formatCurrency = (value?: { units?: string | null; nanos?: number | null }, fallback: string = "$0.00") => {
+const formatCurrency = (value?: { units?: string | null; nanos?: number | null }, fallback: string = "₹0.00") => {
     if (!value || typeof value.units === 'undefined' || value.units === null) {
         return fallback;
     }
@@ -44,9 +44,9 @@ const formatCurrency = (value?: { units?: string | null; nanos?: number | null }
     if (isNaN(number)) {
         return fallback;
     }
-    return new Intl.NumberFormat("en-US", {
+    return new Intl.NumberFormat("en-IN", {
         style: "currency",
-        currency: "USD",
+        currency: "INR",
     }).format(number);
 };
 
