@@ -17,7 +17,6 @@ export async function getFinancialPlanAction(values: z.infer<typeof ActionInputS
   try {
     const validatedValues = ActionInputSchema.parse(values);
     
-    // If monthly income is provided and valid, use it to calculate investment. Otherwise, default to 25000.
     const monthlyInvestment = (validatedValues.monthlyIncome && validatedValues.monthlyIncome > 0) 
       ? validatedValues.monthlyIncome * 0.3 
       : 25000;
