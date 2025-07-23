@@ -27,6 +27,17 @@ export type NetWorthData = z.infer<typeof NetWorthResponseSchema>;
 export async function fetchNetWorthAction(): Promise<{ success: boolean; data?: NetWorthData; error?: string; }> {
   try {
     const response = await fetch("https://add852513a89.ngrok-free.app/mcp/stream", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Mcp-Session-Id': `mcp-session-${crypto.randomUUID()}`
+        },
+        body: JSON.stringify({
+            "jsonrpc":"2.0",
+            "id":1,
+            "method":"tools/call",
+            "params":{"name":"fetch_net_worth","arguments":{}}
+        }),
         cache: 'no-store'
     });
 
