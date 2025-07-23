@@ -38,8 +38,8 @@ const GenerateFinancialPlanOutputSchema = z.object({
     inflationAdjustedTarget: z.string().describe("The inflation-adjusted target amount, e.g., '₹13.5 Lakhs'"),
     requiredMonthlyInvestment: z.string().describe("The calculated monthly investment needed to reach the goal."),
     isUserBudgetSufficient: z.boolean().describe("Whether the user's provided monthly investment budget is sufficient."),
-    sipPlan: z.array(SIPPlanEntrySchema).describe("A detailed breakdown of the suggested SIPs across different funds."),
-    projectedCorpus: z.string().describe("The total projected corpus amount by the goal's deadline."),
+    sipPlan: z.array(SIPPlanEntrySchema).describe("A detailed breakdown of the suggested SIPs across different funds.").optional(),
+    projectedCorpus: z.string().describe("The total projected corpus amount by the goal's deadline.").optional(),
     transactionAdjustments: z.array(z.string()).describe("A list of suggested lifestyle spending cuts based on transaction history."),
     summary: z.string().describe("A witty, helpful, and motivating summary of the plan for the user."),
 });
@@ -57,31 +57,59 @@ const generateFinancialPlanPrompt = ai.definePrompt({
     schema: GenerateFinancialPlanOutputSchema,
   },
   prompt: `
-    You are an AI financial advisor helping an Indian Gen-Z user build an actionable, smart financial plan. Your role is to understand their goal, adjust for inflation, analyze their financial data, and suggest a real-world monthly investment strategy with specific fund names and justifications — all tailored to their risk appetite.
+    You are an AI financial advisor helping an Indian Gen-Z user build an actionable, smart financial plan. Your role is to understand their goal, analyze their financial data, and suggest a clear, friendly, and strategic plan to help them reach it.
 
-    (You may assume inflation rate of 6.5%)
-
-    TASKS:
-    1. Classify the goal: Use time and amount to classify: < 2 years or < ₹2L → "Short-term" Else → "Long-term"
-    2. Adjust for Inflation: Use 6.5% annual inflation to calculate inflation-adjusted target. Show this clearly (e.g., “₹10L today → ₹13.5L by 2030”).
-    3. Determine Monthly Target: Calculate required monthly investment using standard FV formula. If monthlyInvestment is already given, say if it's enough. If not, suggest one.
-    4. Build SIP Plan Based on Risk:
-        - Low: 60% FD/Liquid MF, 30% Large Cap MF, 10% Gold
-        - Medium: 50% Multi-Cap MF, 20% FD, 20% Gold, 10% Midcap
-        - High: 60% Equity MF (Midcap/Smallcap), 30% Stocks, 10% Gold
-    5. Pick Specific Funds: Use market data to choose top-rated funds (real names from AMFI data). For each fund, show the SIP Amount and why this fund was chosen (e.g., “Consistent 12% CAGR, Large Cap, aligns with medium risk.”)
-    6. Projection: Show corpus amount expected by the deadline (based on CAGR). State if it is enough. If not, suggest adjustments (increase monthly investment, extend deadline, or reduce target).
-    7. Smart Adjustments: Check transaction history. If high discretionary spend (e.g., Swiggy, Blinkit), suggest lifestyle tweaks to divert money e.g., “Cut ₹1,500 on Zomato, invest instead”
-    8. Output Summary: Make it funny, witty, smart. User should feel motivated.
+    (You may assume an inflation rate of 6.5%)
 
     USER GOAL:
     - Title: {{{goal.title}}}
-    - Target Amount: ?{{{goal.targetAmount}}}
+    - Target Amount: ₹{{{goal.targetAmount}}}
     - Deadline: {{{goal.deadline}}}
-    - Monthly Investment Budget: ?{{{goal.monthlyInvestment}}}
+    - Monthly Investment Budget: ₹{{{goal.monthlyInvestment}}}
     - Risk Appetite: {{{goal.risk}}}
 
-    Now, use the tool data and the user's goal to generate the complete plan and return it in the required JSON format.
+    ## TASKS:
+
+    1.  **CLASSIFY THE GOAL:** First, determine if the goal is "Short-term" or "Long-term".
+        *   A goal is "Short-term" if the deadline is less than 2 years away OR the target amount is less than ₹2,00,000.
+        *   Otherwise, it is "Long-term".
+        *   Set the "goalType" field in the output JSON accordingly.
+
+    2.  **ANALYZE AND CREATE A PLAN:** Based on the goal classification, follow the appropriate path below.
+
+    ---
+
+    ### **IF THE GOAL IS SHORT-TERM:**
+
+    Your focus is on simple savings and spending adjustments. DO NOT create a complex investment plan (sipPlan should be an empty array or omitted).
+
+    *   **Analyze Transactions:** Use the bank transaction data to find the user's biggest discretionary spending categories (e.g., Swiggy, Zomato, Uber, Blinkit, Amazon).
+    *   **Suggest Spending Cuts:** Create a list of specific, actionable spending cuts. For example: "Reduce Swiggy orders by ₹1,500/month." Populate the \`transactionAdjustments\` array with these suggestions.
+    *   **Create a Simple Savings Plan:** Calculate how quickly the user can reach their goal by making these cuts. Your summary should be very direct and motivational. Example: "Cut ₹1,500 from Zomato and ₹1,000 from Blinkit, and you'll have your new PlayStation in just 4 months. It's that easy! 🚀"
+    *   Keep the overall plan simple and focused on hitting the immediate target through savings. The \`projectedCorpus\` field is not necessary here.
+
+    ---
+
+    ### **IF THE GOAL IS LONG-TERM:**
+
+    Your focus is on building a robust, diversified investment portfolio.
+
+    *   **Inflation Adjustment:** Calculate the goal's future value using a 6.5% annual inflation rate. Populate \`inflationAdjustedTarget\` with this value (e.g., "₹10 Lakhs today will be ₹13.5 Lakhs in 2030").
+    *   **Monthly Target:** Calculate the required monthly SIP to reach the inflation-adjusted target. Populate \`requiredMonthlyInvestment\`. Compare this with the user's provided \`monthlyInvestment\` and set \`isUserBudgetSufficient\` to true or false.
+    *   **Portfolio Comparison & Recommendation:**
+        *   Analyze the user's existing investments from the financial data (net worth, MFs, stocks).
+        *   Create a new, diversified asset allocation plan based on their risk appetite:
+            *   **Low Risk:** 60% FD/Liquid MF, 30% Large-Cap MF, 10% Gold.
+            *   **Medium Risk:** 50% Multi-Cap MF, 20% FD, 20% Gold, 10% Mid-Cap MF.
+            *   **High Risk:** 60% Equity MF (Mid/Small-Cap), 30% Stocks, 10% Gold.
+    *   **Build the SIP Plan:** Use the live AMFI data to pick specific, top-rated funds that fit the new allocation. For each fund in your recommended \`sipPlan\`, provide the \`fundName\`, monthly SIP \`amount\`, and a sharp \`reason\` (e.g., "Large-cap fund with consistent 14% CAGR, fits your medium-risk profile.").
+    *   **Compare Portfolios:** In the \`summary\`, briefly compare their existing portfolio to your suggestion. Example: "Your current portfolio is a bit heavy on risky stocks. My plan balances it out with stable Large-Cap MFs and Gold to better protect your capital while still aiming for solid growth."
+    *   **Projection:** Calculate the final projected corpus based on your recommended plan. Populate \`projectedCorpus\`.
+    *   **Smart Adjustments:** If the user's budget isn't sufficient, check their bank transactions for potential spending cuts and list them in \`transactionAdjustments\`.
+
+    ---
+
+    Now, generate the complete JSON output based on these instructions.
   `,
 });
 
@@ -103,3 +131,5 @@ const generateFinancialPlanFlow = ai.defineFlow(
     return planOutput;
   }
 );
+
+    
