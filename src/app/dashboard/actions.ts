@@ -30,7 +30,8 @@ export async function fetchNetWorthAction(): Promise<{ success: boolean; data?: 
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'Mcp-Session-Id': `mcp-session-${crypto.randomUUID()}`
+            'Mcp-Session-Id': `mcp-session-${crypto.randomUUID()}`,
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         },
         body: JSON.stringify({
             "jsonrpc":"2.0",
@@ -57,9 +58,21 @@ export async function fetchNetWorthAction(): Promise<{ success: boolean; data?: 
           throw new Error("Invalid response format: No JSON object found.");
         }
         const jsonString = textData.substring(jsonStartIndex);
-        const rawData = JSON.parse(jsonString);
-        const validatedData = ApiResponseSchema.parse(rawData);
-        return { success: true, data: validatedData.netWorthResponse };
+        
+        // Sometimes the stream might cut off mid-JSON, so we need to find the last closing brace.
+        const lastBraceIndex = jsonString.lastIndexOf('}');
+        const finalJsonString = jsonString.substring(0, lastBraceIndex + 1);
+
+        const rawData = JSON.parse(finalJsonString);
+        
+        // The actual API response is nested inside the 'result' of the 'result'
+        if (rawData.result && rawData.result.result) {
+            const nestedJson = JSON.parse(rawData.result.result);
+            const validatedData = ApiResponseSchema.parse(nestedJson);
+            return { success: true, data: validatedData.netWorthResponse };
+        } else {
+             throw new Error("Invalid API response structure: 'result.result' not found.");
+        }
     } catch(e) {
         console.error("Failed to parse JSON response:", textData);
         if (e instanceof Error) {
