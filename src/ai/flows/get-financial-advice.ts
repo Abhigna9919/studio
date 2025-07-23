@@ -45,6 +45,11 @@ const financialAdvicePrompt = ai.definePrompt({
     fetchEpfDetailsTool,
     fetchCreditReportTool,
   ],
+  config: {
+    response: {
+        format: 'json',
+    }
+  },
   prompt: `
     Analyze all the data and return ONLY a valid JSON object with these keys:
 
@@ -56,24 +61,6 @@ const financialAdvicePrompt = ai.definePrompt({
   `,
 });
 
-// Helper function to find and parse JSON from a raw text response
-function extractAndParseJson(text: string): any {
-  const jsonMatch = text.match(/```json\n([\s\S]*?)\n```|({[\s\S]*})/);
-  if (!jsonMatch) {
-    throw new Error("No JSON object found in the response text.");
-  }
-  
-  // Use the first captured group that is not undefined.
-  const jsonString = jsonMatch[1] || jsonMatch[2];
-
-  try {
-    return JSON.parse(jsonString);
-  } catch(e) {
-    console.error("Failed to parse the extracted JSON:", jsonString);
-    throw new Error(`Failed to parse the extracted JSON: ${e}`);
-  }
-}
-
 const getFinancialAdviceFlow = ai.defineFlow(
   {
     name: 'getFinancialAdviceFlow',
@@ -82,28 +69,10 @@ const getFinancialAdviceFlow = ai.defineFlow(
   },
   async () => {
     const response = await financialAdvicePrompt({});
-    const adviceText = response.text;
-    if (!adviceText) {
-      throw new Error("Failed to generate financial advice text.");
+    const advice = response.output;
+    if (!advice) {
+      throw new Error("Failed to generate financial advice.");
     }
-
-    try {
-        // First, try to use the structured output if available and valid.
-        if (response.output) {
-            const validationResult = FinancialAdviceOutputSchema.safeParse(response.output);
-            if (validationResult.success) {
-                return validationResult.data;
-            }
-        }
-
-        // If structured output fails, fall back to manually parsing the text.
-        const parsedJson = extractAndParseJson(adviceText);
-        return FinancialAdviceOutputSchema.parse(parsedJson);
-
-    } catch (error) {
-        console.error("Error processing financial advice:", error);
-        console.error("Raw AI response text:", adviceText);
-        throw new Error("An error occurred while processing the financial advice response.");
-    }
+    return advice;
   }
 );
