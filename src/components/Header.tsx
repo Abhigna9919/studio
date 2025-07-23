@@ -1,4 +1,4 @@
-import { Target, User, LayoutDashboard } from "lucide-react";
+import { Target, User, LayoutDashboard, Landmark } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "./ui/button";
@@ -21,6 +21,13 @@ export function Header() {
           >
             <LayoutDashboard className="h-4 w-4 mr-1" />
             Dashboard
+          </Link>
+          <Link
+            href="/dashboard/transactions"
+            className="text-sm font-medium transition-colors hover:text-primary flex items-center"
+          >
+            <Landmark className="h-4 w-4 mr-1" />
+            Transactions
           </Link>
         </nav>
         <div className="flex flex-1 items-center justify-end space-x-4">

@@ -147,3 +147,25 @@ export const netWorthResponseSchema = z.object({
 
 export type NetWorthResponse = z.infer<typeof netWorthResponseSchema>;
 export type AccountDetailsBulkResponse = z.infer<typeof accountDetailsBulkResponseSchema>;
+
+// Schemas for Bank Transactions
+const transactionSchema = z.object({
+  transactionId: z.string(),
+  amount: currencyValueSchema,
+  transactionType: z.string(),
+  transactionMode: z.string(),
+  narration: z.string(),
+  transactionTimestamp: z.string(),
+});
+export type Transaction = z.infer<typeof transactionSchema>;
+
+const accountTransactionSchema = z.object({
+  maskedAccountNumber: z.string(),
+  transactions: z.array(transactionSchema),
+});
+export type AccountTransaction = z.infer<typeof accountTransactionSchema>;
+
+export const bankTransactionsResponseSchema = z.object({
+  accountTransactions: z.array(accountTransactionSchema),
+});
+export type BankTransactionsResponse = z.infer<typeof bankTransactionsResponseSchema>;
