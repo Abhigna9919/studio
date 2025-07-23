@@ -52,36 +52,12 @@ export async function fetchNetWorthAction(): Promise<{ success: boolean; data?: 
       throw new Error(`Failed to fetch data: ${response.status} ${response.statusText}`);
     }
     
-    const textData = await response.text();
-    
-    try {
-        // The response might be a stream with other text. Find the start of the JSON.
-        const jsonStartIndex = textData.indexOf('{');
-        if (jsonStartIndex === -1) {
-          console.error("No JSON object found in the response:", textData);
-          throw new Error("Invalid response format: No JSON object found.");
-        }
-        const jsonString = textData.substring(jsonStartIndex);
-        
-        // Sometimes the stream might cut off mid-JSON, so we need to find the last closing brace.
-        const lastBraceIndex = jsonString.lastIndexOf('}');
-        const finalJsonString = jsonString.substring(0, lastBraceIndex + 1);
+    const rpcResponse = await response.json();
+    const resultString = RpcResponseSchema.parse(rpcResponse).result;
+    const apiResponse = JSON.parse(resultString);
+    const validatedData = ApiResponseSchema.parse(apiResponse);
 
-        const rawData = JSON.parse(finalJsonString);
-        
-        // The actual API response is nested inside the 'result'
-        const rpcResponse = RpcResponseSchema.parse(rawData);
-        const nestedJson = JSON.parse(rpcResponse.result);
-        const validatedData = ApiResponseSchema.parse(nestedJson);
-        return { success: true, data: validatedData.netWorthResponse };
-
-    } catch(e) {
-        console.error("Failed to parse JSON response:", textData, e);
-        if (e instanceof Error) {
-            throw new Error(`JSON parsing error: ${e.message}`);
-        }
-        throw new Error("An unknown JSON parsing error occurred");
-    }
+    return { success: true, data: validatedData.netWorthResponse };
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
