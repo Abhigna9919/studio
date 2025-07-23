@@ -11,3 +11,31 @@ export const goalFormSchema = z.object({
 });
 
 export type GoalFormValues = z.infer<typeof goalFormSchema>;
+
+
+// Schemas for the financial dashboard data from the API
+const currencyValueSchema = z.object({
+  currencyCode: z.string().optional().nullable(),
+  units: z.string().optional().nullable(),
+  nanos: z.number().optional().nullable(),
+});
+
+const netWorthAttributeValueSchema = z.object({
+  netWorthAttribute: z.string(),
+  value: currencyValueSchema,
+});
+
+const netWorthDataSchema = z.object({
+  assetValues: z.array(netWorthAttributeValueSchema),
+  liabilityValues: z.array(netWorthAttributeValueSchema),
+  totalNetWorthValue: currencyValueSchema,
+});
+
+export const netWorthResponseSchema = z.object({
+    netWorthResponse: netWorthDataSchema,
+    // We are not using the other fields for now, but they are in the response
+    // mfSchemeAnalytics: z.any(),
+    // accountDetailsBulkResponse: z.any(),
+});
+
+export type NetWorthResponse = z.infer<typeof netWorthDataSchema>;
