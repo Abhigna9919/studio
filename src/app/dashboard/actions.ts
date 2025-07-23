@@ -24,6 +24,10 @@ const ApiResponseSchema = z.object({
 
 export type NetWorthData = z.infer<typeof NetWorthResponseSchema>;
 
+const RpcResponseSchema = z.object({
+    result: z.string()
+});
+
 export async function fetchNetWorthAction(): Promise<{ success: boolean; data?: NetWorthData; error?: string; }> {
   try {
     const response = await fetch("https://add852513a89.ngrok-free.app/mcp/stream", {
@@ -66,15 +70,13 @@ export async function fetchNetWorthAction(): Promise<{ success: boolean; data?: 
         const rawData = JSON.parse(finalJsonString);
         
         // The actual API response is nested inside the 'result'
-        if (rawData.result) {
-            const nestedJson = JSON.parse(rawData.result);
-            const validatedData = ApiResponseSchema.parse(nestedJson);
-            return { success: true, data: validatedData.netWorthResponse };
-        } else {
-             throw new Error("Invalid API response structure: 'result' not found.");
-        }
+        const rpcResponse = RpcResponseSchema.parse(rawData);
+        const nestedJson = JSON.parse(rpcResponse.result);
+        const validatedData = ApiResponseSchema.parse(nestedJson);
+        return { success: true, data: validatedData.netWorthResponse };
+
     } catch(e) {
-        console.error("Failed to parse JSON response:", textData);
+        console.error("Failed to parse JSON response:", textData, e);
         if (e instanceof Error) {
             throw new Error(`JSON parsing error: ${e.message}`);
         }
