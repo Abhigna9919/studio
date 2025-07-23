@@ -58,7 +58,15 @@ const getFinancialAdviceFlow = ai.defineFlow(
     outputSchema: FinancialAdviceOutputSchema,
   },
   async () => {
-    const response = await financialAdvicePrompt({});
-    return response.text;
+    try {
+      const response = await financialAdvicePrompt({});
+      return response.text;
+    } catch (error) {
+        console.error("Error in getFinancialAdviceFlow:", error);
+        if (error instanceof Error) {
+            return `An error occurred while generating financial advice: ${error.message}`;
+        }
+        return "An unknown error occurred while generating financial advice.";
+    }
   }
 );
