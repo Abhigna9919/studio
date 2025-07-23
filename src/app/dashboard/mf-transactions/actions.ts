@@ -2,6 +2,8 @@
 "use server";
 
 import { mfTransactionsResponseSchema, type MfTransactionsResponse, type MfTransaction } from "@/lib/schemas";
+import { analyzeMutualFundPortfolio, type MfAnalysisOutput } from "@/ai/flows/analyze-mf-portfolio";
+
 
 function extractAndParseJson(text: string): any {
   const jsonMatch = text.match(/{.*}/s);
@@ -92,4 +94,19 @@ export async function fetchMfTransactionsAction(): Promise<{
     console.error("fetchMfTransactionsAction error:", errorMessage);
     return { success: false, error: `Failed to fetch MF transactions: ${errorMessage}` };
   }
+}
+
+export async function getMfAnalysisAction(): Promise<{
+    success: boolean;
+    data?: MfAnalysisOutput;
+    error?: string;
+}> {
+    try {
+        const result = await analyzeMutualFundPortfolio();
+        return { success: true, data: result };
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
+        console.error("getMfAnalysisAction error:", errorMessage);
+        return { success: false, error: `Failed to get MF analysis: ${errorMessage}` };
+    }
 }
