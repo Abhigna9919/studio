@@ -45,6 +45,11 @@ const financialAdvicePrompt = ai.definePrompt({
     fetchEpfDetailsTool,
     fetchCreditReportTool,
   ],
+  config: {
+    response: {
+        format: 'json',
+    }
+  },
   prompt: `
     You're an AI financial advisor.
     Analyze the user's market and personal financial data.
