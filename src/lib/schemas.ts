@@ -284,3 +284,20 @@ export const mfTransactionsResponseSchema = z.object({
     transactions: z.array(mfTransactionSchema),
 });
 export type MfTransactionsResponse = z.infer<typeof mfTransactionsResponseSchema>;
+
+// Schemas for Stock Transactions
+const stockTransactionSchema = z.object({
+    tradeDate: z.string(),
+    stockName: z.string(),
+    isin: z.string(),
+    type: z.enum(['BUY', 'SELL']),
+    quantity: z.number(),
+    price: currencyValueSchema,
+    amount: currencyValueSchema,
+});
+export type StockTransaction = z.infer<typeof stockTransactionSchema>;
+
+export const stockTransactionsResponseSchema = z.object({
+    transactions: z.array(stockTransactionSchema),
+});
+export type StockTransactionsResponse = z.infer<typeof stockTransactionsResponseSchema>;

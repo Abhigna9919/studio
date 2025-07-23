@@ -1,4 +1,4 @@
-import { Target, User, LayoutDashboard, Landmark, FileText, PiggyBank, CandlestickChart } from "lucide-react";
+import { Target, User, LayoutDashboard, Landmark, FileText, PiggyBank, CandlestickChart, ArrowRightLeft } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "./ui/button";
@@ -42,6 +42,13 @@ export function Header() {
           >
             <CandlestickChart className="h-4 w-4 mr-1" />
             MF Transactions
+          </Link>
+           <Link
+            href="/dashboard/stock-transactions"
+            className="text-sm font-medium transition-colors hover:text-primary flex items-center"
+          >
+            <ArrowRightLeft className="h-4 w-4 mr-1" />
+            Stock Transactions
           </Link>
           <Link
             href="/dashboard/epf"
