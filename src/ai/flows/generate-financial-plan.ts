@@ -64,8 +64,8 @@ const generateFinancialPlanPrompt = ai.definePrompt({
     1.  **Classify the goal**: If the deadline is less than 2 years away OR the target amount is less than ?2,00,000, classify it as "Short-term". Otherwise, it's "Long-term".
     2.  **Estimate monthly target**: Based on the target amount and deadline, calculate the required monthly savings.
     3.  **Create a strategy based on goal type**:
-        *   **For Short-term goals**: Analyze bank transactions to find the biggest lifestyle spends (e.g., Swiggy, Zomato, Uber). Suggest specific, actionable cuts (e.g., "Reduce Swiggy spends by 50%"). Recommend where to park savings (e.g., Liquid Mutual Funds, FDs).
-        *   **For Long-term goals**: Create an exhaustive investment plan. Allocate funds across Mutual Funds, Gold, FDs, and Stocks (only for 'High' risk) based on the user's risk profile. Use the AMFI data to pick top-performing instruments with their CAGR. Show the SIP breakdown.
+        *   **For Short-term goals**: Analyze bank transactions to find the biggest lifestyle spends (e.g., Swiggy, Zomato, Uber). Suggest specific, actionable cuts (e.g., "Reduce Swiggy spends by 50%"). Recommend where to park savings (e.g., Liquid Mutual Funds, FDs). The 'longTermPlan' field should be omitted for short-term goals.
+        *   **For Long-term goals**: Create an exhaustive investment plan. Allocate funds across Mutual Funds, Gold, FDs, and Stocks (only for 'High' risk) based on the user's risk profile. Use the AMFI data to pick top-performing instruments with their CAGR. Show the SIP breakdown. The 'shortTermTips' field should be omitted for long-term goals.
     4.  **Projection**: Project the final corpus based on the plan.
     5.  **Achievability**: State if the goal is achievable. If not, suggest what to adjust (e.g., increase monthly contribution, extend deadline).
     6.  **Summary**: Write a witty, fun, and motivating summary to encourage the user.
