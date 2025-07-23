@@ -302,3 +302,19 @@ export const stockTransactionsResponseSchema = z.object({
     transactions: z.array(stockTransactionSchema),
 });
 export type StockTransactionsResponse = z.infer<typeof stockTransactionsResponseSchema>;
+
+
+// Schemas for Market News
+const marketNewsArticleSchema = z.object({
+  id: z.number(),
+  headline: z.string(),
+  summary: z.string(),
+  url: z.string().url(),
+  image: z.string().url().optional().or(z.literal('')),
+  source: z.string(),
+  datetime: z.number(),
+});
+
+export const marketNewsResponseSchema = z.array(marketNewsArticleSchema);
+
+export type MarketNewsArticle = z.infer<typeof marketNewsArticleSchema>;

@@ -1,6 +1,6 @@
 "use server";
 
-import { netWorthResponseSchema, type NetWorthResponse } from "@/lib/schemas";
+import { netWorthResponseSchema, type NetWorthResponse, marketNewsResponseSchema, type MarketNewsArticle } from "@/lib/schemas";
 
 // Helper function to find and parse JSON from a streaming text response
 function extractAndParseJson(text: string): any {
@@ -70,5 +70,48 @@ export async function fetchNetWorthAction(): Promise<{
       error instanceof Error ? error.message : "An unknown error occurred.";
     console.error("fetchNetWorthAction error:", errorMessage);
     return { success: false, error: `Failed to fetch net worth data: ${errorMessage}` };
+  }
+}
+
+
+export async function fetchMarketNewsAction(): Promise<{
+  success: boolean;
+  data?: MarketNewsArticle[];
+  error?: string;
+}> {
+  const apiKey = process.env.FINNHUB_API_KEY;
+  if (!apiKey) {
+    return {
+      success: false,
+      error: "Finnhub API key is not configured. Please add FINNHUB_API_KEY to your .env file.",
+    };
+  }
+
+  try {
+    const response = await fetch(
+      "https://finnhub.io/api/v1/news?category=general",
+      {
+        headers: {
+          "X-Finnhub-Token": apiKey,
+        },
+        next: { revalidate: 3600 } // Revalidate every hour
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`API request failed with status ${response.status}`);
+    }
+
+    const data = await response.json();
+    const validatedData = marketNewsResponseSchema.parse(data);
+    
+    // Return only top 10 articles
+    return { success: true, data: validatedData.slice(0, 10) };
+
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : "An unknown error occurred.";
+    console.error("fetchMarketNewsAction error:", errorMessage);
+    return { success: false, error: `Failed to fetch market news: ${errorMessage}` };
   }
 }

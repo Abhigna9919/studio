@@ -18,6 +18,7 @@ import {
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Pie, PieChart, Cell } from "recharts";
 import type { NetWorthResponse } from "@/lib/schemas";
 import { InvestmentDetails } from "@/components/InvestmentDetails";
+import { MarketNews } from "./MarketNews";
 
 interface FinancialDashboardProps {
   fetchNetWorthAction: () => Promise<{
@@ -83,6 +84,7 @@ export function FinancialDashboard({
         </div>
         <Card><CardHeader><Skeleton className="h-8 w-48" /></CardHeader><CardContent><Skeleton className="h-48 w-full" /></CardContent></Card>
         <Card><CardHeader><Skeleton className="h-8 w-48" /></CardHeader><CardContent><Skeleton className="h-48 w-full" /></CardContent></Card>
+        <Card><CardHeader><Skeleton className="h-8 w-48" /></CardHeader><CardContent><Skeleton className="h-48 w-full" /></CardContent></Card>
       </div>
     );
   }
@@ -117,7 +119,8 @@ export function FinancialDashboard({
 
 
   return (
-    <div className="space-y-6">
+    <div className="grid lg:grid-cols-3 gap-6">
+      <div className="lg:col-span-2 space-y-6">
         <div className="grid gap-6 md:grid-cols-3">
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -194,6 +197,10 @@ export function FinancialDashboard({
         </div>
 
         <InvestmentDetails accountDetails={accountDetailsBulkResponse} />
+      </div>
+      <div className="lg:col-span-1">
+        <MarketNews />
+      </div>
     </div>
   );
 }
