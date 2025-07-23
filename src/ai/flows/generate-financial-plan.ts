@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -31,7 +32,10 @@ export type GenerateFinancialPlanInput = z.infer<typeof GenerateFinancialPlanInp
 
 
 const AssetAllocationSchema = z.object({
-    assetAllocation: z.record(z.number()).describe('A map of asset classes to the allocated monthly amount in rupees (e.g., {"Mutual Funds": 7000}).'),
+    assetAllocation: z.array(z.object({
+        asset: z.string().describe("The asset class, e.g., 'Mutual Funds'"),
+        amount: z.number().describe("The amount to allocate in rupees"),
+    })).describe('An array of asset allocations.'),
 });
 
 const GenerateFinancialPlanOutputSchema = z.object({
@@ -69,9 +73,17 @@ const generateAllocationPrompt = ai.definePrompt({
     - Gold Price: ₹{{{gold_price}}}/gram
     - Top Stocks: {{{top_stock_data}}}
 
-    Your only task is to create a JSON object detailing how to allocate the user's monthly investment (₹{{{goal.monthlyInvestment}}}) across different asset classes (e.g., Mutual Funds, Gold, Fixed Deposit). The sum of allocations must equal the monthly investment.
+    Your only task is to create a JSON object detailing how to allocate the user's monthly investment (₹{{{goal.monthlyInvestment}}}) across different asset classes.
+    The sum of allocations must equal the monthly investment.
 
-    Provide only the JSON object as the output.
+    Output a JSON object in the following structure:
+    {
+      "assetAllocation": [
+        { "asset": "Mutual Funds", "amount": 25000 },
+        { "asset": "Gold", "amount": 15000 },
+        { "asset": "Fixed Deposit", "amount": 35000 }
+      ]
+    }
   `,
 });
 
@@ -84,12 +96,12 @@ const generateSummaryPrompt = ai.definePrompt({
 });
 
 
-function calculateProjectedReturns(allocation: Record<string, number>, months: number): string {
+function calculateProjectedReturns(allocation: {asset: string, amount: number}[], months: number): string {
     // Simplified projection logic. A real app would use more complex calculations.
     const annualGrowthRate = 0.12; // Assume average 12% annual growth
     const monthlyGrowthRate = Math.pow(1 + annualGrowthRate, 1/12) - 1;
 
-    const monthlyInvestment = Object.values(allocation).reduce((sum, val) => sum + val, 0);
+    const monthlyInvestment = allocation.reduce((sum, item) => sum + item.amount, 0);
     
     let futureValue = 0;
     for (let i = 0; i < months; i++) {
@@ -111,6 +123,7 @@ const generateFinancialPlanFlow = ai.defineFlow(
   },
   async input => {
     // Step 1: Get the structured asset allocation from the AI.
+    console.log('Gemini Request for Allocation:', JSON.stringify(input, null, 2));
     const allocationResponse = await generateAllocationPrompt(input);
     console.log('Gemini Raw Response for Allocation:', JSON.stringify(allocationResponse, null, 2));
 
@@ -133,9 +146,9 @@ const generateFinancialPlanFlow = ai.defineFlow(
 
     // Step 4: Format the final output
     const formattedAllocation = Object.fromEntries(
-        Object.entries(assetAllocation).map(([key, value]) => [
-            key,
-            `₹${value.toLocaleString('en-IN')}`
+        assetAllocation.map(item => [
+            item.asset,
+            `₹${item.amount.toLocaleString('en-IN')}`
         ])
     );
 
