@@ -41,6 +41,7 @@ export async function getFinancialPlanAction(values: z.infer<typeof ActionInputS
     const result = await generateFinancialPlan(planInput);
     return { success: true, plan: result };
   } catch (error) {
+    console.error("Error in getFinancialPlanAction:", error);
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
     return { success: false, error: `Failed to generate financial plan: ${errorMessage}` };
   }
