@@ -170,3 +170,41 @@ export const bankTransactionsResponseSchema = z.object({
   accountTransactions: z.array(accountTransactionSchema),
 });
 export type BankTransactionsResponse = z.infer<typeof bankTransactionsResponseSchema>;
+
+
+// Schemas for Credit Report
+const creditScoreSchema = z.object({
+  bureau: z.string(),
+  score: z.number(),
+  rank: z.number(),
+  totalRanks: z.number(),
+  rating: z.string(),
+  factors: z.array(z.string()),
+});
+export type CreditScore = z.infer<typeof creditScoreSchema>;
+
+const scoreHistorySchema = z.object({
+  month: z.string(),
+  score: z.number(),
+});
+export type ScoreHistory = z.infer<typeof scoreHistorySchema>;
+
+const creditAccountSchema = z.object({
+  accountType: z.string(),
+  lender: z.string(),
+  totalBalance: currencyValueSchema.optional().nullable(),
+  sanctionedAmount: currencyValueSchema.optional().nullable(),
+  paymentDueDate: z.string().optional().nullable(),
+  accountStatus: z.string(),
+});
+export type CreditAccount = z.infer<typeof creditAccountSchema>;
+
+const creditReportSchema = z.object({
+  scores: z.array(creditScoreSchema),
+  scoreHistory: z.array(scoreHistorySchema),
+  openAccounts: z.array(creditAccountSchema),
+  closedAccounts: z.array(creditAccountSchema),
+});
+
+export const creditReportResponseSchema = creditReportSchema;
+export type CreditReportResponse = z.infer<typeof creditReportResponseSchema>;
