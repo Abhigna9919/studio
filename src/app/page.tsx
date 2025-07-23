@@ -23,14 +23,6 @@ export default function Home() {
     });
   };
 
-  const handlePlanError = (error: string) => {
-    toast({
-      variant: "destructive",
-      title: "Something went wrong",
-      description: error,
-    });
-  };
-
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <Header />
@@ -39,7 +31,6 @@ export default function Home() {
           <div className="lg:col-span-2">
             <GoalForm 
               onPlanGenerated={handlePlanGenerated} 
-              onPlanError={handlePlanError}
               getFinancialPlanAction={getFinancialPlanAction} 
             />
           </div>

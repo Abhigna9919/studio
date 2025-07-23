@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import React from "react";
 import { format } from "date-fns";
-import { CalendarIcon, Loader2, Sparkles } from "lucide-react";
+import { CalendarIcon, Loader2, Sparkles, AlertTriangle } from "lucide-react";
 
 import { goalFormSchema, type GoalFormValues } from "@/lib/schemas";
 import { cn } from "@/lib/utils";
@@ -18,15 +18,17 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Skeleton } from "./ui/skeleton";
 import { GenerateFinancialPlanOutput } from "@/ai/flows/generate-financial-plan";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
+import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
+import { Textarea } from "./ui/textarea";
 
 interface GoalFormProps {
   onPlanGenerated: (plan: GenerateFinancialPlanOutput, values: GoalFormValues) => void;
-  onPlanError: (error: string) => void;
   getFinancialPlanAction: (values: GoalFormValues) => Promise<{ success: boolean; plan?: GenerateFinancialPlanOutput; error?: string }>;
 }
 
-export function GoalForm({ onPlanGenerated, onPlanError, getFinancialPlanAction }: GoalFormProps) {
+export function GoalForm({ onPlanGenerated, getFinancialPlanAction }: GoalFormProps) {
   const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
   const [isMounted, setIsMounted] = React.useState(false);
 
   const form = useForm<GoalFormValues>({
@@ -51,11 +53,12 @@ export function GoalForm({ onPlanGenerated, onPlanError, getFinancialPlanAction 
 
   async function onSubmit(values: GoalFormValues) {
     setIsLoading(true);
+    setError(null);
     const result = await getFinancialPlanAction(values);
     if (result.success && result.plan) {
       onPlanGenerated(result.plan, values);
     } else if (result.error) {
-        onPlanError(result.error);
+        setError(result.error);
     }
     setIsLoading(false);
   }
@@ -238,7 +241,7 @@ export function GoalForm({ onPlanGenerated, onPlanError, getFinancialPlanAction 
               )}
             />
           </CardContent>
-          <CardFooter>
+          <CardFooter className="flex-col items-start gap-4">
             <Button type="submit" disabled={isLoading} className="w-full text-lg font-bold py-6">
               {isLoading ? (
                 <>
@@ -249,6 +252,19 @@ export function GoalForm({ onPlanGenerated, onPlanError, getFinancialPlanAction 
                  "Generate My Plan"
               )}
             </Button>
+            {error && (
+               <Alert variant="destructive" className="w-full">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Error Generating Plan</AlertTitle>
+                <AlertDescription>
+                  <Textarea 
+                    readOnly
+                    className="mt-2 w-full font-mono text-xs h-48 resize-none"
+                    value={error}
+                  />
+                </AlertDescription>
+              </Alert>
+            )}
           </CardFooter>
         </form>
       </Form>
