@@ -290,7 +290,7 @@ const stockTransactionSchema = z.object({
     tradeDate: z.string(),
     stockName: z.string(),
     isin: z.string(),
-    type: z.enum(['BUY', 'SELL']),
+    type: z.enum(['BUY', 'SELL', 'BONUS', 'SPLIT']),
     quantity: z.number(),
     price: currencyValueSchema,
     amount: currencyValueSchema,

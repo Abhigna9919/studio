@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect, useState } from 'react';
@@ -99,7 +100,6 @@ export function StockTransactions() {
           <TableHeader>
             <TableRow>
               <TableHead>Date</TableHead>
-              <TableHead>Stock</TableHead>
               <TableHead>ISIN</TableHead>
               <TableHead>Type</TableHead>
               <TableHead className="text-right">Quantity</TableHead>
@@ -111,14 +111,13 @@ export function StockTransactions() {
             {transactionsData.transactions.map((txn, index) => (
               <TableRow key={index}>
                 <TableCell>{format(new Date(txn.tradeDate), 'PP')}</TableCell>
-                <TableCell className="font-medium">{txn.stockName}</TableCell>
-                <TableCell>{txn.isin}</TableCell>
+                <TableCell className="font-medium">{txn.isin}</TableCell>
                 <TableCell>
                   <Badge variant={txn.type === 'BUY' ? 'default' : 'destructive'}>
                     {txn.type}
                   </Badge>
                 </TableCell>
-                <TableCell className="text-right">{txn.quantity}</TableCell>
+                <TableCell className="text-right">{txn.quantity.toFixed(2)}</TableCell>
                 <TableCell className="text-right">{formatCurrency(txn.price)}</TableCell>
                 <TableCell className="text-right">{formatCurrency(txn.amount)}</TableCell>
               </TableRow>
