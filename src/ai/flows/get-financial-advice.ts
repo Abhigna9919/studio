@@ -22,11 +22,7 @@ import {
 const FinancialAdviceInputSchema = z.object({});
 export type FinancialAdviceInput = z.infer<typeof FinancialAdviceInputSchema>;
 
-const FinancialAdviceOutputSchema = z.object({
-  recommendations: z.array(z.string()).describe("Actionable financial recommendations for the user."),
-  idealAssetTypes: z.array(z.string()).describe("The ideal asset classes for the user's investment portfolio."),
-  humor: z.string().describe("A witty, Gen-Z friendly, and relatable humorous comment about the user's financial habits.")
-});
+const FinancialAdviceOutputSchema = z.string();
 export type FinancialAdviceOutput = z.infer<typeof FinancialAdviceOutputSchema>;
 
 export async function getFinancialAdvice(input: FinancialAdviceInput): Promise<FinancialAdviceOutput> {
@@ -36,7 +32,6 @@ export async function getFinancialAdvice(input: FinancialAdviceInput): Promise<F
 const financialAdvicePrompt = ai.definePrompt({
   name: 'financialAdvicePrompt',
   input: { schema: FinancialAdviceInputSchema },
-  output: { schema: FinancialAdviceOutputSchema },
   tools: [
     fetchNetWorthTool,
     fetchBankTransactionsTool,
@@ -45,11 +40,6 @@ const financialAdvicePrompt = ai.definePrompt({
     fetchEpfDetailsTool,
     fetchCreditReportTool,
   ],
-  config: {
-    response: {
-        format: 'json',
-    }
-  },
   prompt: `
     Analyze all the data and return ONLY a valid JSON object with these keys:
 
@@ -69,10 +59,6 @@ const getFinancialAdviceFlow = ai.defineFlow(
   },
   async () => {
     const response = await financialAdvicePrompt({});
-    const advice = response.output;
-    if (!advice) {
-      throw new Error("Failed to generate financial advice.");
-    }
-    return advice;
+    return response.text;
   }
 );
