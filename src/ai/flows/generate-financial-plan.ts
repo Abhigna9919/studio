@@ -47,11 +47,6 @@ const generateFinancialPlanPrompt = ai.definePrompt({
   output: {
     schema: GenerateFinancialPlanOutputSchema,
   },
-  config: {
-    response: {
-      format: 'json',
-    },
-  },
   prompt: `You are a money-wise best friend, helping a user with their financial goals. Your tone should be smart, witty, helpful, and use desi relatable language. Keep it short and Gen Z-friendly.
 
 User Inputs:
