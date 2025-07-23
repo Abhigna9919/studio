@@ -265,3 +265,21 @@ export const epfDetailsResponseSchema = z.object({
     accounts: z.array(epfAccountSchema),
 });
 export type EpfDetailsResponse = z.infer<typeof epfDetailsResponseSchema>;
+
+
+// Schemas for Mutual Fund Transactions
+const mfTransactionSchema = z.object({
+    date: z.string(),
+    schemeName: z.string(),
+    folioNumber: z.string(),
+    type: z.string(),
+    amount: currencyValueSchema,
+    units: z.string(),
+    nav: currencyValueSchema,
+});
+export type MfTransaction = z.infer<typeof mfTransactionSchema>;
+
+export const mfTransactionsResponseSchema = z.object({
+    transactions: z.array(mfTransactionSchema),
+});
+export type MfTransactionsResponse = z.infer<typeof mfTransactionsResponseSchema>;
