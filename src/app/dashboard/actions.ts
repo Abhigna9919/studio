@@ -48,11 +48,13 @@ export async function fetchNetWorthAction(): Promise<{ success: boolean; data?: 
 
     if (!response.ok) {
       const errorBody = await response.text();
-      console.error("API request failed:", response.status, response.statusText, errorBody);
-      throw new Error(`Failed to fetch data: ${response.status} ${response.statusText}`);
+      console.error("API request failed with status:", response.status, response.statusText);
+      console.error("API response body:", errorBody);
+      throw new Error(`API request failed: ${response.status} ${response.statusText}`);
     }
     
     const rpcResponse = await response.json();
+    
     const resultString = RpcResponseSchema.parse(rpcResponse).result;
     const apiResponse = JSON.parse(resultString);
     const validatedData = ApiResponseSchema.parse(apiResponse);
@@ -61,7 +63,7 @@ export async function fetchNetWorthAction(): Promise<{ success: boolean; data?: 
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
-    console.error("fetchNetWorthAction error:", errorMessage);
+    console.error("fetchNetWorthAction error:", error);
     return { success: false, error: `Failed to fetch net worth data: ${errorMessage}` };
   }
 }
