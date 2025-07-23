@@ -85,7 +85,7 @@ const generateFinancialPlanPrompt = ai.definePrompt({
 
     Your focus is on simple savings and spending adjustments. DO NOT create a complex investment plan (sipPlan and projectedCorpus should be omitted).
 
-    *   **Analyze Transactions:** Use the bank transaction data to find the user's biggest discretionary spending categories (e.g., Swiggy, Zomato, Uber, Blinkit, Amazon).
+    *   **Analyze Transactions:** Use the fetchBankTransactionsTool to find the user's biggest discretionary spending categories (e.g., Swiggy, Zomato, Uber, Blinkit, Amazon).
     *   **Suggest Spending Cuts:** Create a list of specific, actionable spending cuts. For example: "Reduce Swiggy orders by ₹1,500/month." Populate the \`transactionAdjustments\` array with these suggestions.
     *   **Create a Simple Savings Plan:** Calculate how quickly the user can reach their goal by making these cuts. Your summary should be very direct and motivational. Example: "Cut ₹1,500 from Zomato and ₹1,000 from Blinkit, and you'll have your new PlayStation in just 4 months. It's that easy! 🚀"
     *   Keep the overall plan simple and focused on hitting the immediate target through savings.
@@ -99,15 +99,15 @@ const generateFinancialPlanPrompt = ai.definePrompt({
     *   **Inflation Adjustment:** Calculate the goal's future value using a 6.5% annual inflation rate. Populate \`inflationAdjustedTarget\` with this value (e.g., "₹10 Lakhs today will be ₹13.5 Lakhs in 2030").
     *   **Monthly Target:** Calculate the required monthly SIP to reach the inflation-adjusted target. Populate \`requiredMonthlyInvestment\`. Compare this with the user's provided \`monthlyInvestment\` and set \`isUserBudgetSufficient\` to true or false.
     *   **Portfolio Comparison & Recommendation:**
-        *   Analyze the user's existing investments from the financial data (net worth, MFs, stocks).
+        *   Analyze the user's existing investments using fetchNetWorthTool and fetchMfTransactionsTool.
         *   Create a new, diversified asset allocation plan based on their risk appetite:
             *   **Low Risk:** 60% FD/Liquid MF, 30% Large-Cap MF, 10% Gold.
             *   **Medium Risk:** 50% Multi-Cap MF, 20% FD, 20% Gold, 10% Mid-Cap MF.
             *   **High Risk:** 60% Equity MF (Mid/Small-Cap), 30% Stocks, 10% Gold.
-    *   **Build the SIP Plan:** Use the live AMFI data to pick specific, top-rated funds that fit the new allocation. For each fund in your recommended \`sipPlan\`, provide the \`fundName\`, monthly SIP \`amount\`, and a sharp \`reason\` (e.g., "Large-cap fund with consistent 14% CAGR, fits your medium-risk profile.").
+    *   **Build the SIP Plan:** Use the live AMFI data from fetchAmfiNavDataTool to pick specific, top-rated funds that fit the new allocation. For each fund in your recommended \`sipPlan\`, provide the \`fundName\`, monthly SIP \`amount\`, and a sharp \`reason\` (e.g., "Large-cap fund with consistent 14% CAGR, fits your medium-risk profile.").
     *   **Compare Portfolios:** In the \`currentVsSuggestedPlanComparison\` field, briefly compare their existing portfolio to your suggestion. Example: "Your current portfolio is a bit heavy on risky stocks. My plan balances it out with stable Large-Cap MFs and Gold to better protect your capital while still aiming for solid growth."
     *   **Projection:** Calculate the final projected corpus based on your recommended plan. Populate \`projectedCorpus\`.
-    *   **Smart Adjustments:** If the user's budget isn't sufficient, check their bank transactions for potential spending cuts and list them in \`transactionAdjustments\`.
+    *   **Smart Adjustments:** If the user's budget isn't sufficient, use fetchBankTransactionsTool to check their bank transactions for potential spending cuts and list them in \`transactionAdjustments\`.
 
     ---
 
@@ -133,3 +133,5 @@ const generateFinancialPlanFlow = ai.defineFlow(
     return planOutput;
   }
 );
+
+    
