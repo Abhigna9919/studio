@@ -2,10 +2,9 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { fetchStockTransactionsAction } from '@/app/dashboard/stock-transactions/actions';
+import { fetchStockTransactionsAction, getStockAnalysisAction } from '@/app/dashboard/stock-transactions/actions';
 import { useToast } from '@/hooks/use-toast';
-import type { StockTransactionsResponse } from '@/lib/schemas';
-import { analyzeStockPortfolio, type StockAnalysisOutput } from '@/ai/flows/analyze-stock-portfolio';
+import type { StockTransactionsResponse, StockAnalysisOutput } from '@/lib/schemas';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from './ui/skeleton';
@@ -43,7 +42,7 @@ const AnalysisCard = ({ analysis }: { analysis: StockAnalysisOutput }) => {
             <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-primary">
                     <Sparkles className="h-6 w-6" />
-                    AI Portfolio Analysis
+                    Portfolio Analysis
                 </CardTitle>
                 <CardDescription>{analysis.portfolioSummary}</CardDescription>
             </CardHeader>
@@ -94,30 +93,37 @@ export function StockTransactions() {
       setIsLoading(true);
       
       const transactionsResult = await fetchStockTransactionsAction();
-      
       if (transactionsResult.success && transactionsResult.data) {
         setTransactionsData(transactionsResult.data);
-        
-        try {
-          const analysisResult = await analyzeStockPortfolio(transactionsResult.data);
-          setAnalysisData(analysisResult);
-        } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
-          console.error("Failed to load stock analysis:", errorMessage);
-          toast({
-            variant: "destructive",
-            title: "AI Analysis Failed",
-            description: "Could not generate AI-powered analysis for your stock portfolio.",
-          });
-          setAnalysisData(null);
-        }
-      } else if (transactionsResult.error) {
-        toast({
+      } else {
+         toast({
           variant: "destructive",
           title: "Failed to load Stock transactions",
           description: transactionsResult.error,
         });
         setTransactionsData(null);
+      }
+
+      // Fetch analysis only if transactions were loaded successfully
+      if (transactionsResult.success) {
+        try {
+            const analysisResult = await getStockAnalysisAction();
+            if (analysisResult.success && analysisResult.data) {
+                setAnalysisData(analysisResult.data);
+            } else if (analysisResult.error) {
+                console.error("Failed to load stock analysis:", analysisResult.error);
+                setAnalysisData(null); // Explicitly set to null on error
+            }
+        } catch (error) {
+           const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
+           console.error("Failed to load stock analysis:", errorMessage);
+           toast({
+            variant: "destructive",
+            title: "Analysis Failed",
+            description: "Could not generate analysis for your stock portfolio.",
+          });
+          setAnalysisData(null);
+        }
       }
       
       setIsLoading(false);

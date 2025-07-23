@@ -1,8 +1,8 @@
 
 "use server";
 
-import { stockTransactionsResponseSchema, type StockTransactionsResponse, type StockTransaction } from "@/lib/schemas";
-import { analyzeStockPortfolio, type StockAnalysisOutput } from "@/ai/flows/analyze-stock-portfolio";
+import { stockTransactionsResponseSchema, type StockTransactionsResponse, type StockTransaction, type StockAnalysisOutput } from "@/lib/schemas";
+import { getStockPriceTool } from '@/ai/tools/financial-tools';
 
 function extractAndParseJson(text: string): any {
   const jsonMatch = text.match(/{.*}/s);
@@ -100,5 +100,82 @@ export async function fetchStockTransactionsAction(): Promise<{
       error instanceof Error ? error.message : "An unknown error occurred.";
     console.error("fetchStockTransactionsAction error:", errorMessage);
     return { success: false, error: `Failed to fetch Stock transactions: ${errorMessage}` };
+  }
+}
+
+export async function getStockAnalysisAction(): Promise<{
+  success: boolean;
+  data?: StockAnalysisOutput;
+  error?: string;
+}> {
+  try {
+    // 1. Fetch transactions
+    const transactionsResult = await fetchStockTransactionsAction();
+    if (!transactionsResult.success || !transactionsResult.data) {
+      throw new Error(transactionsResult.error || "Failed to fetch stock transactions for analysis.");
+    }
+    const transactions = transactionsResult.data.transactions;
+
+    // 2. Aggregate holdings
+    const holdings: { [isin: string]: { quantity: number; invested: number; name: string } } = {};
+    for (const txn of transactions) {
+      if (!holdings[txn.isin]) {
+        holdings[txn.isin] = { quantity: 0, invested: 0, name: '' };
+      }
+      if (txn.type === 'BUY') {
+        holdings[txn.isin].quantity += txn.quantity;
+        holdings[txn.isin].invested += parseFloat(txn.amount.units || '0');
+      } else if (txn.type === 'SELL') {
+        holdings[txn.isin].quantity -= txn.quantity;
+      }
+    }
+
+    // 3. Enrich with live data and calculate current value
+    const enrichedHoldings = await Promise.all(
+      Object.entries(holdings)
+        .filter(([, data]) => data.quantity > 0)
+        .map(async ([isin, data]) => {
+          const priceData = await getStockPriceTool({ isin });
+          const currentValue = priceData.price * data.quantity;
+          return {
+            stockName: priceData.name || isin,
+            investedAmount: String(data.invested),
+            currentValue: String(currentValue),
+            sector: 'Unknown', // Simplified
+          };
+        })
+    );
+    
+    const totalPortfolioValue = enrichedHoldings.reduce((sum, h) => sum + parseFloat(h.currentValue), 0);
+    
+    // 4. Determine Top 5 Holdings
+    const topHoldings = enrichedHoldings
+      .sort((a, b) => parseFloat(b.currentValue) - parseFloat(a.currentValue))
+      .slice(0, 5);
+
+    // 5. Basic Sector Allocation (simplified)
+    const sectorAllocation = [{ sector: 'Unknown', percentage: 100 }]; // Placeholder
+
+    // 6. Generate Recommendations (simplified)
+    const recommendations = [
+      `Your portfolio has ${enrichedHoldings.length} unique stocks.`,
+      `The total estimated value is ${new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(totalPortfolioValue)}.`,
+      "Consider using a portfolio tracker for more detailed sector and risk analysis."
+    ];
+
+    // 7. Assemble the final output
+    const analysis: StockAnalysisOutput = {
+      portfolioSummary: `A summary of your ${enrichedHoldings.length} stocks.`,
+      topHoldings: topHoldings,
+      sectorAllocation: sectorAllocation,
+      recommendations: recommendations,
+    };
+
+    return { success: true, data: analysis };
+
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
+    console.error("getStockAnalysisAction error:", errorMessage);
+    return { success: false, error: `Failed to get stock analysis: ${errorMessage}` };
   }
 }
