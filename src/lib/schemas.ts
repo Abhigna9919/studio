@@ -31,11 +31,68 @@ const netWorthDataSchema = z.object({
   totalNetWorthValue: currencyValueSchema,
 });
 
-export const netWorthResponseSchema = z.object({
-    netWorthResponse: netWorthDataSchema,
-    // We are not using the other fields for now, but they are in the response
-    // mfSchemeAnalytics: z.any(),
-    // accountDetailsBulkResponse: z.any(),
+const equityHoldingInfoSchema = z.object({
+  isin: z.string(),
+  issuerName: z.string(),
+  isinDescription: z.string(),
+  units: z.number(),
+  lastTradedPrice: currencyValueSchema,
 });
 
-export type NetWorthResponse = z.infer<typeof netWorthDataSchema>;
+const equitySummarySchema = z.object({
+    currentValue: currencyValueSchema,
+    holdingsInfo: z.array(equityHoldingInfoSchema),
+});
+
+const depositSummarySchema = z.object({
+    currentBalance: currencyValueSchema,
+    depositAccountType: z.string(),
+});
+
+const mfSchemeDetailSchema = z.object({
+    nameData: z.object({ longName: z.string() }),
+    assetClass: z.string(),
+});
+
+const mfEnrichedAnalyticsSchema = z.object({
+    analytics: z.object({
+        schemeDetails: z.object({
+            currentValue: currencyValueSchema,
+            investedValue: currencyValueSchema.optional(),
+            XIRR: z.number().optional(),
+        }),
+    }),
+});
+
+const mfSchemeAnalyticsSchema = z.object({
+    schemeDetail: mfSchemeDetailSchema,
+    enrichedAnalytics: mfEnrichedAnalyticsSchema.optional(),
+});
+
+
+const accountDetailsSchema = z.object({
+  fipId: z.string(),
+  maskedAccountNumber: z.string(),
+  accInstrumentType: z.string(),
+  equitySummary: equitySummarySchema.optional(),
+  depositSummary: depositSummarySchema.optional(),
+});
+
+const accountDetailsMapSchema = z.record(accountDetailsSchema);
+
+const accountDetailsBulkResponseSchema = z.object({
+    accountDetailsMap: accountDetailsMapSchema,
+});
+
+const mfAnalyticsSchema = z.object({
+    schemeAnalytics: z.array(mfSchemeAnalyticsSchema)
+});
+
+export const netWorthResponseSchema = z.object({
+    netWorthResponse: netWorthDataSchema,
+    accountDetailsBulkResponse: accountDetailsBulkResponseSchema,
+    mfSchemeAnalytics: mfAnalyticsSchema.optional(),
+});
+
+export type NetWorthResponse = z.infer<typeof netWorthResponseSchema>;
+export type AccountDetailsBulkResponse = z.infer<typeof accountDetailsBulkResponseSchema>;

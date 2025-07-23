@@ -4,7 +4,6 @@ import { netWorthResponseSchema, type NetWorthResponse } from "@/lib/schemas";
 
 // Helper function to find and parse JSON from a streaming text response
 function extractAndParseJson(text: string): any {
-  // This regex finds JSON content that might be embedded in a streaming response.
   const jsonMatch = text.match(/{.*}/s);
   if (!jsonMatch) {
     throw new Error("No JSON object found in the response text.");
@@ -63,8 +62,9 @@ export async function fetchNetWorthAction(): Promise<{
 
     const netWorthData = JSON.parse(nestedJsonString);
     const validatedData = netWorthResponseSchema.parse(netWorthData);
-
+    
     return { success: true, data: validatedData };
+
   } catch (error) {
     const errorMessage =
       error instanceof Error ? error.message : "An unknown error occurred.";

@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/chart";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Pie, PieChart, Cell } from "recharts";
 import type { NetWorthResponse } from "@/lib/schemas";
+import { InvestmentDetails } from "@/components/InvestmentDetails";
 
 interface FinancialDashboardProps {
   fetchNetWorthAction: () => Promise<{
@@ -61,7 +62,7 @@ export function FinancialDashboard({
       setIsLoading(true);
       const result = await fetchNetWorthAction();
       if (result.success && result.data) {
-        setDashboardData(result.data.netWorthResponse);
+        setDashboardData(result.data);
       } else if (result.error) {
         onDataError(result.error);
         setDashboardData(null);
@@ -74,10 +75,14 @@ export function FinancialDashboard({
 
   if (isLoading) {
     return (
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-         <Card><CardHeader><Skeleton className="h-6 w-32" /></CardHeader><CardContent><Skeleton className="h-40 w-full" /></CardContent></Card>
-         <Card><CardHeader><Skeleton className="h-6 w-32" /></CardHeader><CardContent><Skeleton className="h-40 w-full" /></CardContent></Card>
-         <Card><CardHeader><Skeleton className="h-6 w-32" /></CardHeader><CardContent><Skeleton className="h-40 w-full" /></CardContent></Card>
+      <div className="grid gap-6">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <Card><CardHeader><Skeleton className="h-6 w-32" /></CardHeader><CardContent><Skeleton className="h-24 w-full" /></CardContent></Card>
+          <Card><CardHeader><Skeleton className="h-6 w-32" /></CardHeader><CardContent><Skeleton className="h-24 w-full" /></CardContent></Card>
+          <Card><CardHeader><Skeleton className="h-6 w-32" /></CardHeader><CardContent><Skeleton className="h-24 w-full" /></CardContent></Card>
+        </div>
+        <Card><CardHeader><Skeleton className="h-8 w-48" /></CardHeader><CardContent><Skeleton className="h-48 w-full" /></CardContent></Card>
+        <Card><CardHeader><Skeleton className="h-8 w-48" /></CardHeader><CardContent><Skeleton className="h-48 w-full" /></CardContent></Card>
       </div>
     );
   }
@@ -99,7 +104,8 @@ export function FinancialDashboard({
     );
   }
 
-  const { assetValues, liabilityValues, totalNetWorthValue } = dashboardData;
+  const { netWorthResponse, accountDetailsBulkResponse } = dashboardData;
+  const { assetValues, liabilityValues, totalNetWorthValue } = netWorthResponse;
 
   const totalAssets = assetValues.reduce((acc, asset) => acc + parseFloat(asset.value.units || "0"), 0);
   const totalLiabilities = liabilityValues.reduce((acc, liability) => acc + parseFloat(liability.value.units || "0"), 0);
@@ -111,7 +117,7 @@ export function FinancialDashboard({
 
 
   return (
-    <div className="grid gap-6">
+    <div className="space-y-6">
         <div className="grid gap-6 md:grid-cols-3">
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -186,6 +192,8 @@ export function FinancialDashboard({
                 </CardContent>
             </Card>
         </div>
+
+        <InvestmentDetails accountDetails={accountDetailsBulkResponse} />
     </div>
   );
 }
