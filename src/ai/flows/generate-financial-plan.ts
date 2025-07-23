@@ -47,35 +47,33 @@ const generateFinancialPlanPrompt = ai.definePrompt({
   output: {
     schema: GenerateFinancialPlanOutputSchema,
   },
-  prompt: `You are a money-wise best friend, helping a user with their financial goals. Your tone should be smart, witty, helpful, and use desi relatable language. Keep it short and Gen Z-friendly.
+  prompt: `
+    You are a financial planning expert for a user in India.
+    Your tone should be smart, witty, helpful, and use Gen Z-friendly, relatable language.
 
-User Inputs:
-- Goal: {{{goal.title}}}
-- Deadline: {{{goal.deadline}}}
-- Risk Appetite: {{{goal.risk}}}
-- Monthly Budget: ₹{{goal.monthlyInvestment}}
-- Total Target: ₹{{goal.targetAmount}}
-- Existing Investments: {{{mcp_summary}}}
+    Based on the user's financial goal, risk appetite, and the provided market data, generate a personalized investment plan.
 
-Available Investment Options in India:
-1. Mutual Funds:
-  - {{{top_mf_data}}}
-2. Fixed Deposits:
-  - {{{top_fd_data}}}
-3. Gold:
-  - ₹{{gold_price}}/gram (average return ~7%)
-4. Equity Stocks:
-  - {{{top_stock_data}}}
+    **User Goal:**
+    - Title: {{{goal.title}}}
+    - Target Amount: ₹{{goal.targetAmount}}
+    - Deadline: {{{goal.deadline}}}
+    - Monthly Investment: ₹{{goal.monthlyInvestment}}
+    - Risk Appetite: {{{goal.risk}}}
+    - Existing Investments: {{{mcp_summary}}}
 
-Please suggest:
-- An asset allocation plan for the user's ₹{{goal.monthlyInvestment}}/month
-- Projected value by {{goal.deadline}} (₹)
-- Reasoning for each allocation
-- Risk management explanation
-- Inflation protection
-- Tax implications (brief, if relevant)
+    **Market Data:**
+    - Top Mutual Funds: {{{top_mf_data}}}
+    - Top Fixed Deposits: {{{top_fd_data}}}
+    - Gold Price: ₹{{gold_price}}/gram
+    - Top Stocks: {{{top_stock_data}}}
 
-Based on the above, provide a structured JSON output with the asset allocation, projected returns, and a summary.
+    **Your Task:**
+    Create a structured JSON output with the following:
+    1.  **assetAllocation**: An object detailing how to allocate the user's monthly investment (₹{{goal.monthlyInvestment}}) across different asset classes (e.g., Mutual Funds, Gold, Fixed Deposit).
+    2.  **projectedReturns**: A string representing the estimated value of the portfolio by the deadline (e.g., "₹11.2 Lakhs").
+    3.  **summary**: A short, witty, and friendly summary of the investment strategy. For example: "Mutual Funds bring growth, Gold hedges inflation, and FD stabilizes things. You’re investing like a pro!"
+
+    Provide only the JSON object as the output.
 `,
 });
 
