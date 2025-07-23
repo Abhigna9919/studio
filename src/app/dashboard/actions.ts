@@ -31,13 +31,22 @@ export async function fetchNetWorthAction(): Promise<{ success: boolean; data?: 
     });
 
     if (!response.ok) {
+      const errorBody = await response.text();
+      console.error("API request failed:", response.status, response.statusText, errorBody);
       throw new Error(`Failed to fetch data: ${response.status} ${response.statusText}`);
     }
     
     const textData = await response.text();
     
     try {
-        const rawData = JSON.parse(textData);
+        // The response might be a stream with other text. Find the start of the JSON.
+        const jsonStartIndex = textData.indexOf('{');
+        if (jsonStartIndex === -1) {
+          console.error("No JSON object found in the response:", textData);
+          throw new Error("Invalid response format: No JSON object found.");
+        }
+        const jsonString = textData.substring(jsonStartIndex);
+        const rawData = JSON.parse(jsonString);
         const validatedData = ApiResponseSchema.parse(rawData);
         return { success: true, data: validatedData.netWorthResponse };
     } catch(e) {
