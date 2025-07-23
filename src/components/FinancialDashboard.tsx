@@ -15,7 +15,6 @@ interface FinancialDashboardProps {
 
 const formatCurrency = (value: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
 
-// A more robust way to format attribute names
 const formatAttributeName = (name: string) => {
     return name
         .replace(/_/g, ' ')
@@ -36,7 +35,7 @@ export function FinancialDashboard({ fetchNetWorthAction, onDataError }: Financi
         setData(result.data);
       } else if (result.error) {
         onDataError(result.error);
-        setData(null); // Ensure data is cleared on error
+        setData(null); 
       }
       setIsLoading(false);
     };
@@ -91,7 +90,7 @@ export function FinancialDashboard({ fetchNetWorthAction, onDataError }: Financi
                 <CardTitle className="mt-4">Failed to Load Data</CardTitle>
                 <CardDescription>
                     There was an error fetching your financial information. <br/>
-                    Please try refreshing the page.
+                    Please try refreshing the page or check the console for more details.
                 </CardDescription>
             </CardHeader>
         </Card>
@@ -166,7 +165,7 @@ export function FinancialDashboard({ fetchNetWorthAction, onDataError }: Financi
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                                 <ChartTooltip 
-                                    content={<ChartTooltipContent hideLabel nameKey="name" formatter={(value, name) => <div><p className="font-semibold">{name}</p><p>{formatCurrency(value as number)}</p></div>} />}
+                                    content={<ChartTooltipContent hideLabel nameKey="name" formatter={(value, name) => <div className="p-1"><p className="font-semibold">{formatAttributeName(name as string)}</p><p>{formatCurrency(value as number)}</p></div>} />}
                                 />
                                 <Pie
                                     data={data.assets}
@@ -176,7 +175,7 @@ export function FinancialDashboard({ fetchNetWorthAction, onDataError }: Financi
                                     cy="50%"
                                     outerRadius={80}
                                     labelLine={false}
-                                    label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
+                                    label={({ name, percent }) => `${formatAttributeName(name)}: ${(percent * 100).toFixed(0)}%`}
                                 >
                                     {data.assets.map((entry, index) => (
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
