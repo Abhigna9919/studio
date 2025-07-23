@@ -1,3 +1,4 @@
+
 'use server';
 
 import {ai} from '@/ai/genkit';
@@ -16,6 +17,44 @@ import {fetchStockTransactionsAction} from '@/app/dashboard/stock-transactions/a
 import {fetchMfTransactionsAction} from '@/app/dashboard/mf-transactions/actions';
 import {fetchEpfDetailsAction} from '@/app/dashboard/epf/actions';
 import {fetchCreditReportAction} from '@/app/dashboard/credit-report/actions';
+
+
+export const fetchAmfiNavDataTool = ai.defineTool(
+  {
+    name: 'fetchAmfiNavData',
+    description: 'Fetches a summary of the latest Net Asset Value (NAV) for top Indian mutual funds from AMFI.',
+    inputSchema: z.object({}),
+    outputSchema: z.string(),
+  },
+  async () => {
+    try {
+      const response = await fetch('https://www.amfiindia.com/spages/NAVAll.txt');
+      if (!response.ok) {
+        throw new Error(`Failed to fetch AMFI data: ${response.statusText}`);
+      }
+      const textData = await response.text();
+      const lines = textData.split('\n');
+      
+      // Filter for relevant lines (equity funds, etc.) and skip header/footer
+      const relevantLines = lines.filter(line => 
+        line.includes('Equity') && !line.startsWith('Scheme Code')
+      );
+
+      // Get a sample of the data to pass to the model (e.g., first 20 relevant funds)
+      const dataSummary = relevantLines.slice(0, 20).map(line => {
+        const parts = line.split(';');
+        // Scheme Name; Net Asset Value
+        return `${parts[3]}: ${parts[4]}`;
+      }).join(', ');
+      
+      return `Top Mutual Funds Summary: ${dataSummary}`;
+    } catch (error) {
+      console.error("Error fetching or parsing AMFI NAV data:", error);
+      return "Could not retrieve mutual fund data at this time.";
+    }
+  }
+);
+
 
 export const fetchNetWorthTool = ai.defineTool(
   {

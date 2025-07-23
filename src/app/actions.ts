@@ -1,3 +1,4 @@
+
 "use server";
 
 import { z } from "zod";
@@ -21,7 +22,7 @@ export async function getFinancialPlanAction(values: z.infer<typeof ActionInputS
       ? validatedValues.monthlyIncome * 0.3 
       : 25000;
 
-    const planInput: GenerateFinancialPlanInput = {
+    const planInput: Omit<GenerateFinancialPlanInput, 'top_mf_data'> = {
       goal: {
         title: validatedValues.title,
         deadline: format(validatedValues.deadline, 'yyyy-MM-dd'),
@@ -31,7 +32,6 @@ export async function getFinancialPlanAction(values: z.infer<typeof ActionInputS
       },
       // Using placeholder data for market info as requested.
       // In a real app, this would be fetched from live APIs.
-      top_mf_data: "Mirae Asset Large Cap: 12% CAGR, moderate risk; Parag Parikh Flexi Cap: 15% CAGR, medium-high risk",
       top_fd_data: "SBI FD: 7.25%, safe; HDFC FD: 7.5%, safe",
       gold_price: "6500",
       top_stock_data: "Tata Consumer: 11% CAGR, mid-cap; Reliance Industries: 14% CAGR, large-cap",

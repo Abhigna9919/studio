@@ -11,6 +11,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import { fetchAmfiNavDataTool } from '../tools/financial-tools';
 
 const GoalSchema = z.object({
   title: z.string().describe('The title of the financial goal (e.g., "Buy a car")'),
@@ -23,7 +24,6 @@ const GoalSchema = z.object({
 const GenerateFinancialPlanInputSchema = z.object({
   goal: GoalSchema,
   mcp_summary: z.string().optional().describe('Optional summary of the user\'s existing investments.'),
-  top_mf_data: z.string().describe('Data on top mutual funds (e.g., "Mirae Asset Large Cap: 12% CAGR, moderate risk").'),
   top_fd_data: z.string().describe('Data on top fixed deposits (e.g., "SBI FD: 7.25%, safe").'),
   gold_price: z.string().describe('Current price of gold per gram.'),
   top_stock_data: z.string().describe('Data on top equity stocks (e.g., "Tata Consumer: 11% CAGR, mid-cap").'),
@@ -51,6 +51,7 @@ export async function generateFinancialPlan(input: GenerateFinancialPlanInput): 
 
 const generateAllocationPrompt = ai.definePrompt({
   name: 'generateAllocationPrompt',
+  tools: [fetchAmfiNavDataTool],
   input: {schema: GenerateFinancialPlanInputSchema},
   output: {
     schema: AssetAllocationSchema,
@@ -58,6 +59,8 @@ const generateAllocationPrompt = ai.definePrompt({
   prompt: `
     You are a financial planning expert for a user in India.
     Based on the user's financial goal, risk appetite, and the provided market data, generate a personalized investment plan.
+
+    First, use the 'fetchAmfiNavDataTool' to get the latest NAV data for mutual funds.
 
     **User Goal:**
     - Title: {{{goal.title}}}
@@ -67,14 +70,13 @@ const generateAllocationPrompt = ai.definePrompt({
     - Risk Appetite: {{{goal.risk}}}
     - Existing Investments: {{{mcp_summary}}}
 
-    **Market Data:**
-    - Top Mutual Funds: {{{top_mf_data}}}
+    **Market Data (to be used along with fetched NAV data):**
     - Top Fixed Deposits: {{{top_fd_data}}}
     - Gold Price: ₹{{{gold_price}}}/gram
     - Top Stocks: {{{top_stock_data}}}
 
     Your only task is to create a JSON object detailing how to allocate the user's monthly investment (₹{{{goal.monthlyInvestment}}}) across different asset classes.
-    The sum of allocations must equal the monthly investment.
+    Consider the fetched mutual fund data and the user's existing investments when deciding the allocation. The sum of allocations must equal the monthly investment.
 
     Output a JSON object in the following structure:
     {
@@ -90,9 +92,9 @@ const generateAllocationPrompt = ai.definePrompt({
 
 const generateSummaryPrompt = ai.definePrompt({
     name: 'generateSummaryPrompt',
-    input: { schema: z.object({ allocation: z.string() }) },
+    input: { schema: z.object({ allocation: z.string(), existing_investments: z.string().optional() }) },
     output: { schema: z.object({ summary: z.string() }) },
-    prompt: `Based on this asset allocation: {{{allocation}}}, write a short, witty, and friendly summary of the investment strategy. For example: "Mutual Funds bring growth, Gold hedges inflation, and FD stabilizes things. You’re investing like a pro!"`,
+    prompt: `Based on this asset allocation: {{{allocation}}}, and considering the user's existing investments ({{{existing_investments}}}), write a short, witty, and friendly summary of the investment strategy. For example: "Factoring in your current holdings, we're diversifying with top mutual funds for growth, while gold hedges against inflation. You’re investing like a pro!"`,
 });
 
 
@@ -122,10 +124,8 @@ const generateFinancialPlanFlow = ai.defineFlow(
     outputSchema: GenerateFinancialPlanOutputSchema,
   },
   async input => {
-    // Step 1: Get the structured asset allocation from the AI.
-    console.log('Gemini Request for Allocation:', JSON.stringify(input, null, 2));
+    // Step 1: Get the structured asset allocation from the AI. This will now use the tool.
     const allocationResponse = await generateAllocationPrompt(input);
-    console.log('Gemini Raw Response for Allocation:', JSON.stringify(allocationResponse, null, 2));
 
     const allocationOutput = allocationResponse.output;
     if (!allocationOutput) {
@@ -139,9 +139,9 @@ const generateFinancialPlanFlow = ai.defineFlow(
     const months = (deadline.getFullYear() - now.getFullYear()) * 12 + (deadline.getMonth() - now.getMonth());
     const projectedReturns = calculateProjectedReturns(assetAllocation, months);
 
-    // Step 3: Generate the witty summary.
+    // Step 3: Generate the witty summary, now considering existing investments.
     const allocationString = JSON.stringify(assetAllocation);
-    const { output: summaryOutput } = await generateSummaryPrompt({ allocation: allocationString });
+    const { output: summaryOutput } = await generateSummaryPrompt({ allocation: allocationString, existing_investments: input.mcp_summary });
     const summary = summaryOutput?.summary || "Your personalized investment plan is ready!";
 
     // Step 4: Format the final output
