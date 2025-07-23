@@ -29,6 +29,7 @@ export const getStockPriceTool = ai.defineTool(
     outputSchema: z.object({
       price: z.number(),
       currency: z.string().default('INR'),
+      name: z.string().optional(),
     }),
   },
   async ({ isin }) => {
@@ -55,6 +56,7 @@ export const getStockPriceTool = ai.defineTool(
       }
       
       const symbol = bestMatch['1. symbol'];
+      const name = bestMatch['2. name'];
 
       // Step 2: Get the global quote for the found symbol
       const quoteUrl = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${symbol}&apikey=${apiKey}`;
@@ -72,12 +74,12 @@ export const getStockPriceTool = ai.defineTool(
         if (!isNaN(price)) {
           // Note: Alpha Vantage returns prices in local currency of the exchange.
           // We assume INR for Indian stocks, but this could be enhanced by checking the '4. region' from search.
-          return { price };
+          return { price, name };
         }
       }
       
       console.warn(`Could not parse price from Alpha Vantage for symbol ${symbol}.`);
-      return { price: 0 };
+      return { price: 0, name };
 
     } catch (error) {
         console.error(`Error in getStockPriceTool for ISIN ${isin}:`, error);

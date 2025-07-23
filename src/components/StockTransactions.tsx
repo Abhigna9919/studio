@@ -2,10 +2,10 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { fetchStockTransactionsAction, getStockAnalysisAction } from '@/app/dashboard/stock-transactions/actions';
+import { fetchStockTransactionsAction } from '@/app/dashboard/stock-transactions/actions';
 import { useToast } from '@/hooks/use-toast';
 import type { StockTransactionsResponse } from '@/lib/schemas';
-import { type StockAnalysisOutput } from '@/ai/flows/analyze-stock-portfolio';
+import { analyzeStockPortfolio, type StockAnalysisOutput } from '@/ai/flows/analyze-stock-portfolio';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from './ui/skeleton';
@@ -93,13 +93,24 @@ export function StockTransactions() {
     const fetchData = async () => {
       setIsLoading(true);
       
-      const [transactionsResult, analysisResult] = await Promise.all([
-        fetchStockTransactionsAction(),
-        getStockAnalysisAction()
-      ]);
-
+      const transactionsResult = await fetchStockTransactionsAction();
+      
       if (transactionsResult.success && transactionsResult.data) {
         setTransactionsData(transactionsResult.data);
+        
+        try {
+          const analysisResult = await analyzeStockPortfolio(transactionsResult.data);
+          setAnalysisData(analysisResult);
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
+          console.error("Failed to load stock analysis:", errorMessage);
+          toast({
+            variant: "destructive",
+            title: "AI Analysis Failed",
+            description: "Could not generate AI-powered analysis for your stock portfolio.",
+          });
+          setAnalysisData(null);
+        }
       } else if (transactionsResult.error) {
         toast({
           variant: "destructive",
@@ -109,13 +120,6 @@ export function StockTransactions() {
         setTransactionsData(null);
       }
       
-      if (analysisResult.success && analysisResult.data) {
-        setAnalysisData(analysisResult.data);
-      } else if (analysisResult.error) {
-         console.error("Failed to load stock analysis:", analysisResult.error);
-         setAnalysisData(null);
-      }
-
       setIsLoading(false);
     };
 

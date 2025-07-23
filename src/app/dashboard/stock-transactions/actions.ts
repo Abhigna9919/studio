@@ -102,18 +102,3 @@ export async function fetchStockTransactionsAction(): Promise<{
     return { success: false, error: `Failed to fetch Stock transactions: ${errorMessage}` };
   }
 }
-
-export async function getStockAnalysisAction(): Promise<{
-    success: boolean;
-    data?: StockAnalysisOutput;
-    error?: string;
-}> {
-    try {
-        const result = await analyzeStockPortfolio();
-        return { success: true, data: result };
-    } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
-        console.error("getStockAnalysisAction error:", errorMessage);
-        return { success: false, error: `Failed to get stock analysis: ${errorMessage}` };
-    }
-}
