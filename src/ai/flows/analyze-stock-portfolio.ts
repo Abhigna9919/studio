@@ -12,6 +12,7 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { fetchStockTransactionsAction } from '@/app/dashboard/stock-transactions/actions';
 import { type StockTransactionsResponse, stockTransactionsResponseSchema } from '@/lib/schemas';
+import { getStockPriceTool } from '../tools/financial-tools';
 
 const StockAnalysisOutputSchema = z.object({
     portfolioSummary: z.string().describe("A brief, one-sentence summary of the user's stock portfolio concentration and potential risk."),
@@ -47,6 +48,7 @@ const analyzeStockPortfolioPrompt = ai.definePrompt({
   name: 'analyzeStockPortfolioPrompt',
   input: { schema: StockAnalysisInputSchema },
   output: { schema: StockAnalysisOutputSchema },
+  tools: [getStockPriceTool],
   prompt: `
     You are an expert stock market analyst. Your task is to analyze the provided JSON data of a user's stock transactions and return a clear, concise analysis. The user is likely from India.
 
@@ -56,7 +58,9 @@ const analyzeStockPortfolioPrompt = ai.definePrompt({
     ## TASKS:
 
     1. **Analyze and Summarize:** Based on the fetched transactions, perform the following analysis:
-        *   **Calculate Holdings:** For each unique stock (by ISIN), calculate the net quantity of shares held (total BUYs - total SELLs). Then, estimate the total invested amount and the current value. Assume the 'price' in the last transaction for a stock is its current market price for valuation purposes.
+        *   **Calculate Holdings:** For each unique stock (by ISIN), calculate the net quantity of shares held (total BUYs - total SELLs). Then, estimate the total invested amount.
+        *   **Fetch Live Prices:** Use the getStockPriceTool to fetch the current market price for each stock held.
+        *   **Calculate Current Value:** Use the live price to calculate the current market value of each holding.
         *   **Identify Top 5 Holdings:** Based on the calculated current value, determine the top 5 largest stock holdings.
         *   **Estimate Sector Allocation:** Infer the sector for each stock based on its name or common knowledge (e.g., 'RELIANCE' is 'Energy/Conglomerate', 'HDFCBANK' is 'Banking'). Estimate the portfolio's allocation across these sectors.
         *   **Generate Recommendations:** Based on the allocation and holdings, provide 2-3 actionable recommendations. For example, if the portfolio is 90% in technology stocks, suggest diversification. If it contains many high-risk penny stocks, suggest caution.
