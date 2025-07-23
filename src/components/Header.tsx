@@ -1,4 +1,4 @@
-import { Target, User, LayoutDashboard, Landmark, FileText, PiggyBank, CandlestickChart, ArrowRightLeft } from "lucide-react";
+import { Flame, User, LayoutDashboard, Landmark, FileText, PiggyBank, CandlestickChart, ArrowRightLeft } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "./ui/button";
@@ -6,59 +6,55 @@ import Link from "next/link";
 
 export function Header() {
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 items-center">
-        <div className="mr-4 flex items-center">
-          <Link href="/" className="flex items-center">
-            <Target className="h-6 w-6 mr-2 text-primary" />
-            <span className="font-bold text-lg font-headline">GoalQuest</span>
+        <div className="mr-4 hidden md:flex">
+          <Link href="/" className="mr-6 flex items-center space-x-2">
+            <Flame className="h-6 w-6 text-primary" />
+            <span className="hidden font-bold sm:inline-block">
+              GoalQuest
+            </span>
           </Link>
+          <nav className="flex items-center gap-4 text-sm lg:gap-6">
+            <Link
+              href="/dashboard"
+              className="transition-colors hover:text-foreground/80 text-foreground/60"
+            >
+              Dashboard
+            </Link>
+            <Link
+              href="/dashboard/transactions"
+              className="transition-colors hover:text-foreground/80 text-foreground/60"
+            >
+              Transactions
+            </Link>
+            <Link
+              href="/dashboard/credit-report"
+              className="transition-colors hover:text-foreground/80 text-foreground/60"
+            >
+              Credit Report
+            </Link>
+            <Link
+              href="/dashboard/mf-transactions"
+              className="transition-colors hover:text-foreground/80 text-foreground/60"
+            >
+              MF Trades
+            </Link>
+            <Link
+              href="/dashboard/stock-transactions"
+              className="transition-colors hover:text-foreground/80 text-foreground/60"
+            >
+              Stock Trades
+            </Link>
+             <Link
+              href="/dashboard/epf"
+              className="transition-colors hover:text-foreground/80 text-foreground/60"
+            >
+              EPF
+            </Link>
+          </nav>
         </div>
-        <nav className="flex items-center space-x-4 lg:space-x-6 mx-6">
-          <Link
-            href="/dashboard"
-            className="text-sm font-medium transition-colors hover:text-primary flex items-center"
-          >
-            <LayoutDashboard className="h-4 w-4 mr-1" />
-            Dashboard
-          </Link>
-          <Link
-            href="/dashboard/transactions"
-            className="text-sm font-medium transition-colors hover:text-primary flex items-center"
-          >
-            <Landmark className="h-4 w-4 mr-1" />
-            Transactions
-          </Link>
-          <Link
-            href="/dashboard/credit-report"
-            className="text-sm font-medium transition-colors hover:text-primary flex items-center"
-          >
-            <FileText className="h-4 w-4 mr-1" />
-            Credit Report
-          </Link>
-           <Link
-            href="/dashboard/mf-transactions"
-            className="text-sm font-medium transition-colors hover:text-primary flex items-center"
-          >
-            <CandlestickChart className="h-4 w-4 mr-1" />
-            MF Transactions
-          </Link>
-           <Link
-            href="/dashboard/stock-transactions"
-            className="text-sm font-medium transition-colors hover:text-primary flex items-center"
-          >
-            <ArrowRightLeft className="h-4 w-4 mr-1" />
-            Stock Transactions
-          </Link>
-          <Link
-            href="/dashboard/epf"
-            className="text-sm font-medium transition-colors hover:text-primary flex items-center"
-          >
-            <PiggyBank className="h-4 w-4 mr-1" />
-            EPF Details
-          </Link>
-        </nav>
-        <div className="flex flex-1 items-center justify-end space-x-4">
+        <div className="flex flex-1 items-center justify-end space-x-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-9 w-9 rounded-full">

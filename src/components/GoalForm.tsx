@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import React from "react";
 import { format } from "date-fns";
-import { CalendarIcon, Loader2, Target } from "lucide-react";
+import { CalendarIcon, Loader2, Sparkles } from "lucide-react";
 
 import { goalFormSchema, type GoalFormValues, type FinancialPlan } from "@/lib/schemas";
 import { cn } from "@/lib/utils";
@@ -35,13 +35,13 @@ export function GoalForm({ onPlanGenerated, onPlanError, getFinancialPlanAction 
   React.useEffect(() => {
     setIsMounted(true);
     const defaultDeadline = new Date();
-    defaultDeadline.setMonth(defaultDeadline.getMonth() + 6);
+    defaultDeadline.setMonth(defaultDeadline.getMonth() + 12);
     form.reset({
-      goalAmount: 10000,
+      goalAmount: 25000,
       deadline: defaultDeadline,
-      currentSavings: 1000,
-      monthlyIncome: 5000,
-      monthlyExpenses: 3000,
+      currentSavings: 5000,
+      monthlyIncome: 6000,
+      monthlyExpenses: 2500,
     });
   }, [form]);
 
@@ -64,10 +64,10 @@ export function GoalForm({ onPlanGenerated, onPlanError, getFinancialPlanAction 
 
   if (!isMounted) {
     return (
-      <Card>
+      <Card className="bg-card/50 border-border/50">
         <CardHeader>
           <div className="flex items-center gap-2">
-            <Target className="h-6 w-6 text-primary" />
+            <Skeleton className="h-6 w-6 rounded-full" />
             <Skeleton className="h-6 w-48" />
           </div>
           <Skeleton className="h-4 w-64" />
@@ -97,7 +97,7 @@ export function GoalForm({ onPlanGenerated, onPlanError, getFinancialPlanAction 
           </div>
         </CardContent>
         <CardFooter>
-          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-12 w-full" />
         </CardFooter>
       </Card>
     );
@@ -105,13 +105,13 @@ export function GoalForm({ onPlanGenerated, onPlanError, getFinancialPlanAction 
 
 
   return (
-    <Card>
+    <Card className="bg-card/50 border-border/50">
       <CardHeader>
-        <div className="flex items-center gap-2">
-            <Target className="h-6 w-6 text-primary" />
-            <CardTitle className="font-headline">Set Your Financial Goal</CardTitle>
+        <div className="flex items-center gap-3">
+            <Sparkles className="h-6 w-6 text-accent" />
+            <CardTitle className="font-headline text-2xl">Define Your Vibe</CardTitle>
         </div>
-        <CardDescription>Tell us your goal and we'll generate a plan for you.</CardDescription>
+        <CardDescription>Drop your goal details and let our AI cook up a fire financial plan for you.</CardDescription>
       </CardHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -121,7 +121,7 @@ export function GoalForm({ onPlanGenerated, onPlanError, getFinancialPlanAction 
               name="goalAmount"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Goal Amount ($)</FormLabel>
+                  <FormLabel>The Goal ($)</FormLabel>
                   <FormControl>
                     <Input type="number" placeholder="10000" {...field} />
                   </FormControl>
@@ -176,11 +176,11 @@ export function GoalForm({ onPlanGenerated, onPlanError, getFinancialPlanAction 
                 name="currentSavings"
                 render={({ field }) => (
                     <FormItem>
-                    <FormLabel>Current Savings ($)</FormLabel>
+                    <FormLabel>Current Stash ($)</FormLabel>
                     <FormControl>
                         <Input type="number" placeholder="1000" {...field} />
                     </FormControl>
-                    <FormDescription>Optional</FormDescription>
+                    <FormDescription>Optional, but helps</FormDescription>
                     <FormMessage />
                     </FormItem>
                 )}
@@ -190,7 +190,7 @@ export function GoalForm({ onPlanGenerated, onPlanError, getFinancialPlanAction 
                 name="monthlyIncome"
                 render={({ field }) => (
                     <FormItem>
-                    <FormLabel>Monthly Income ($)</FormLabel>
+                    <FormLabel>Monthly Flow ($)</FormLabel>
                     <FormControl>
                         <Input type="number" placeholder="5000" {...field} />
                     </FormControl>
@@ -205,7 +205,7 @@ export function GoalForm({ onPlanGenerated, onPlanError, getFinancialPlanAction 
               name="monthlyExpenses"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Monthly Expenses ($)</FormLabel>
+                  <FormLabel>Monthly Burn ($)</FormLabel>
                   <FormControl>
                     <Input type="number" placeholder="3000" {...field} />
                   </FormControl>
@@ -216,14 +216,14 @@ export function GoalForm({ onPlanGenerated, onPlanError, getFinancialPlanAction 
             />
           </CardContent>
           <CardFooter>
-            <Button type="submit" disabled={isLoading} className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
+            <Button type="submit" disabled={isLoading} size="lg" className="w-full font-bold text-lg bg-primary hover:bg-primary/90">
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Generating Plan...
+                  Cooking...
                 </>
               ) : (
-                "Generate Plan"
+                "Generate My Plan"
               )}
             </Button>
           </CardFooter>
