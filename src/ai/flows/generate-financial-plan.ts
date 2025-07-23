@@ -47,7 +47,7 @@ export async function generateFinancialPlan(input: GenerateFinancialPlanInput): 
 
 const generateAllocationPrompt = ai.definePrompt({
   name: 'generateAllocationPrompt',
-  input: { schema: GenerateFinancialPlanInputSchema },
+  input: {schema: GenerateFinancialPlanInputSchema},
   output: {
     schema: AssetAllocationSchema,
   },
@@ -57,19 +57,19 @@ const generateAllocationPrompt = ai.definePrompt({
 
     **User Goal:**
     - Title: {{{goal.title}}}
-    - Target Amount: ₹{{goal.targetAmount}}
+    - Target Amount: ₹{{{goal.targetAmount}}}
     - Deadline: {{{goal.deadline}}}
-    - Monthly Investment: ₹{{goal.monthlyInvestment}}
+    - Monthly Investment: ₹{{{goal.monthlyInvestment}}}
     - Risk Appetite: {{{goal.risk}}}
     - Existing Investments: {{{mcp_summary}}}
 
     **Market Data:**
     - Top Mutual Funds: {{{top_mf_data}}}
     - Top Fixed Deposits: {{{top_fd_data}}}
-    - Gold Price: ₹{{gold_price}}}/gram
+    - Gold Price: ₹{{{gold_price}}}/gram
     - Top Stocks: {{{top_stock_data}}}
 
-    Your only task is to create a JSON object detailing how to allocate the user's monthly investment (₹{{goal.monthlyInvestment}}) across different asset classes (e.g., Mutual Funds, Gold, Fixed Deposit). The sum of allocations must equal the monthly investment.
+    Your only task is to create a JSON object detailing how to allocate the user's monthly investment (₹{{{goal.monthlyInvestment}}}) across different asset classes (e.g., Mutual Funds, Gold, Fixed Deposit). The sum of allocations must equal the monthly investment.
 
     Provide only the JSON object as the output.
   `,
