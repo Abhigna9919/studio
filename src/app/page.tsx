@@ -1,10 +1,11 @@
+
 "use client";
 
 import { Header } from "@/components/Header";
 import { GoalForm } from "@/components/GoalForm";
 import { FinancialPlanDisplay } from "@/components/FinancialPlanDisplay";
 import { useState } from "react";
-import type { GoalFormValues, FinancialPlan } from "@/lib/schemas";
+import type { GoalFormValues } from "@/lib/schemas";
 import { getFinancialPlanAction } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
 import type { GenerateFinancialPlanOutput } from "@/ai/flows/generate-financial-plan";
@@ -12,15 +13,16 @@ import type { GenerateFinancialPlanOutput } from "@/ai/flows/generate-financial-
 export default function Home() {
   const [plan, setPlan] = useState<GenerateFinancialPlanOutput | null>(null);
   const [goal, setGoal] = useState<GoalFormValues | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
   const handlePlanGenerated = (newPlan: GenerateFinancialPlanOutput, formValues: GoalFormValues) => {
     setPlan(newPlan);
     setGoal(formValues);
-    toast({
-      title: "Plan Generated!",
-      description: "Your personalized financial plan is ready.",
-    });
+  };
+  
+  const handleIsLoading = (loading: boolean) => {
+    setIsLoading(loading);
   };
 
   return (
@@ -31,11 +33,12 @@ export default function Home() {
           <div className="lg:col-span-2">
             <GoalForm 
               onPlanGenerated={handlePlanGenerated} 
-              getFinancialPlanAction={getFinancialPlanAction} 
+              getFinancialPlanAction={getFinancialPlanAction}
+              setIsLoading={handleIsLoading}
             />
           </div>
           <div className="lg:col-span-3">
-            <FinancialPlanDisplay plan={plan} goal={goal} />
+            <FinancialPlanDisplay plan={plan} goal={goal} isLoading={isLoading} />
           </div>
         </div>
       </main>

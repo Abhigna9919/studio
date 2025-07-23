@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -24,12 +25,13 @@ import { Textarea } from "./ui/textarea";
 interface GoalFormProps {
   onPlanGenerated: (plan: GenerateFinancialPlanOutput, values: GoalFormValues) => void;
   getFinancialPlanAction: (values: GoalFormValues) => Promise<{ success: boolean; plan?: GenerateFinancialPlanOutput; error?: string }>;
+  setIsLoading: (isLoading: boolean) => void;
 }
 
-export function GoalForm({ onPlanGenerated, getFinancialPlanAction }: GoalFormProps) {
-  const [isLoading, setIsLoading] = React.useState(false);
+export function GoalForm({ onPlanGenerated, getFinancialPlanAction, setIsLoading }: GoalFormProps) {
   const [error, setError] = React.useState<string | null>(null);
   const [isMounted, setIsMounted] = React.useState(false);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   const form = useForm<GoalFormValues>({
     resolver: zodResolver(goalFormSchema),
@@ -52,6 +54,7 @@ export function GoalForm({ onPlanGenerated, getFinancialPlanAction }: GoalFormPr
   }, [form]);
 
   async function onSubmit(values: GoalFormValues) {
+    setIsSubmitting(true);
     setIsLoading(true);
     setError(null);
     const result = await getFinancialPlanAction(values);
@@ -60,6 +63,7 @@ export function GoalForm({ onPlanGenerated, getFinancialPlanAction }: GoalFormPr
     } else if (result.error) {
         setError(result.error);
     }
+    setIsSubmitting(false);
     setIsLoading(false);
   }
 
@@ -189,11 +193,11 @@ export function GoalForm({ onPlanGenerated, getFinancialPlanAction }: GoalFormPr
                 name="monthlyIncome"
                 render={({ field }) => (
                     <FormItem>
-                    <FormLabel>Monthly Flow (₹)</FormLabel>
+                    <FormLabel>Your Monthly Investment Budget (₹)</FormLabel>
                     <FormControl>
                         <Input type="number" placeholder="50000" {...field} />
                     </FormControl>
-                    <FormDescription>Optional, helps in suggesting monthly investment</FormDescription>
+                    <FormDescription>How much can you set aside each month for this goal?</FormDescription>
                     <FormMessage />
                     </FormItem>
                 )}
@@ -242,8 +246,8 @@ export function GoalForm({ onPlanGenerated, getFinancialPlanAction }: GoalFormPr
             />
           </CardContent>
           <CardFooter className="flex-col items-start gap-4">
-            <Button type="submit" disabled={isLoading} className="w-full text-lg font-bold py-6">
-              {isLoading ? (
+            <Button type="submit" disabled={isSubmitting} className="w-full text-lg font-bold py-6">
+              {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                   Cooking...

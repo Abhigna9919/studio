@@ -4,22 +4,16 @@
 import { z } from "zod";
 import { generateFinancialPlan, type GenerateFinancialPlanInput, type GenerateFinancialPlanOutput } from "@/ai/flows/generate-financial-plan";
 import { format } from 'date-fns';
+import { goalFormSchema } from "@/lib/schemas";
 
-const ActionInputSchema = z.object({
-  title: z.string(),
-  risk: z.enum(['Low', 'Medium', 'High']),
-  goalAmount: z.coerce.number(),
-  deadline: z.date(),
-  monthlyIncome: z.coerce.number().optional().or(z.literal('')),
-});
-
-export async function getFinancialPlanAction(values: z.infer<typeof ActionInputSchema>): Promise<{ success: boolean; plan?: GenerateFinancialPlanOutput; error?: string; }> {
+export async function getFinancialPlanAction(values: z.infer<typeof goalFormSchema>): Promise<{ success: boolean; plan?: GenerateFinancialPlanOutput; error?: string; }> {
   try {
-    const validatedValues = ActionInputSchema.parse(values);
+    const validatedValues = goalFormSchema.parse(values);
     
-    const monthlyInvestment = (validatedValues.monthlyIncome && validatedValues.monthlyIncome > 0) 
+    // Ensure monthlyIncome is a number, providing a default if it's not present or invalid
+    const monthlyInvestment = (validatedValues.monthlyIncome && typeof validatedValues.monthlyIncome === 'number' && validatedValues.monthlyIncome > 0) 
       ? validatedValues.monthlyIncome
-      : 25000;
+      : 25000; // Default to 25000 if not provided or invalid
 
     const planInput: GenerateFinancialPlanInput = {
       goal: {

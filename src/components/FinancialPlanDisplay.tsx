@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import type { GoalFormValues, FinancialPlan } from "@/lib/schemas";
-import { DollarSign, Target, Calendar, TrendingUp, Sparkles, CheckCircle, XCircle, ArrowDownCircle, Info, GitCompareArrows } from "lucide-react";
+import { DollarSign, Target, Calendar, TrendingUp, Sparkles, CheckCircle, XCircle, ArrowDownCircle, Info, GitCompareArrows, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 import { Alert, AlertTitle, AlertDescription } from "./ui/alert";
@@ -10,6 +10,7 @@ import { Badge } from "./ui/badge";
 interface FinancialPlanDisplayProps {
   plan: FinancialPlan | null;
   goal: GoalFormValues | null;
+  isLoading: boolean;
 }
 
 const formatCurrency = (value: number | string) => {
@@ -108,15 +109,29 @@ const PlanComparisonCard = ({ plan }: { plan: FinancialPlan }) => {
 
 
 
-export function FinancialPlanDisplay({ plan, goal }: FinancialPlanDisplayProps) {
+export function FinancialPlanDisplay({ plan, goal, isLoading }: FinancialPlanDisplayProps) {
+  if (isLoading) {
+    return (
+      <Card className="h-full flex items-center justify-center min-h-[500px] border-2 border-dashed border-border/30 bg-transparent">
+        <div className="text-center p-8">
+          <Loader2 className="mx-auto h-16 w-16 text-primary animate-spin" />
+          <h3 className="mt-4 text-2xl font-bold font-headline">Cooking Up Your Plan...</h3>
+          <p className="mt-1 text-md text-muted-foreground">
+            The AI is analyzing your data, running the numbers, and building your personalized financial strategy. Hang tight!
+          </p>
+        </div>
+      </Card>
+    );
+  }
+  
   if (!plan || !goal) {
     return (
       <Card className="h-full flex items-center justify-center min-h-[500px] border-2 border-dashed border-border/30 bg-transparent">
         <div className="text-center p-8">
           <Sparkles className="mx-auto h-16 w-16 text-muted-foreground/50" />
-          <h3 className="mt-4 text-2xl font-bold font-headline">Your Plan is Loading...</h3>
+          <h3 className="mt-4 text-2xl font-bold font-headline">Your Plan Will Appear Here</h3>
           <p className="mt-1 text-md text-muted-foreground">
-            Get ready for the financial glow up. The AI is doing its magic.
+            Fill out the form on the left to get your personalized financial glow up.
           </p>
         </div>
       </Card>

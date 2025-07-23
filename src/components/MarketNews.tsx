@@ -33,7 +33,7 @@ export function MarketNews() {
     };
 
     fetchData();
-  }, [toast]);
+  }, []);
 
   if (isLoading) {
     return (
@@ -82,7 +82,7 @@ export function MarketNews() {
     );
   }
 
-  if (!news || news.length === 0) {
+  if (error || !news || news.length === 0) {
     return (
       <Card className="flex flex-col items-center justify-center min-h-[300px] text-center border-dashed">
         <CardHeader>
@@ -91,8 +91,7 @@ export function MarketNews() {
           </div>
           <CardTitle className="mt-4">No News Found</CardTitle>
           <CardDescription>
-            Could not retrieve any market news. <br />
-            This might be due to an API issue or network problem.
+            { error ? error : "Could not retrieve any market news. This might be due to an API issue or network problem."}
           </CardDescription>
         </CardHeader>
       </Card>
@@ -111,7 +110,7 @@ export function MarketNews() {
       <CardContent className="space-y-6">
         {news.map(article => (
           <a key={article.id} href={article.url} target="_blank" rel="noopener noreferrer" className="flex gap-4 items-start group hover:bg-muted/50 p-2 rounded-lg transition-colors">
-            {article.image ? (
+            {article.image && article.image.startsWith('http') ? (
                 <Image
                     src={article.image}
                     alt={article.headline}
