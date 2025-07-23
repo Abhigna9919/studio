@@ -10,12 +10,12 @@ const ActionInputSchema = z.object({
   risk: z.enum(['Low', 'Medium', 'High']),
   goalAmount: z.coerce.number(),
   deadline: z.date(),
-  monthlyIncome: z.coerce.number().optional(),
+  monthlyIncome: z.coerce.number().optional().or(z.literal('')),
 });
 
 export async function getFinancialPlanAction(values: z.infer<typeof ActionInputSchema>): Promise<{ success: boolean; plan?: GenerateFinancialPlanOutput; error?: string; }> {
   try {
-    const validatedValues = ActionInputScreen.tsxchema.parse(values);
+    const validatedValues = ActionInputSchema.parse(values);
     
     // If monthly income is provided and valid, use it to calculate investment. Otherwise, default to 25000.
     const monthlyInvestment = (validatedValues.monthlyIncome && validatedValues.monthlyIncome > 0) 
