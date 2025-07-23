@@ -30,7 +30,7 @@ export async function fetchNetWorthAction(): Promise<{ success: boolean; data?: 
         cache: 'no-store' 
     });
     if (!response.ok) {
-      throw new Error(`Failed to fetch data: ${response.statusText}`);
+      throw new Error(`Failed to fetch data: ${response.status} ${response.statusText}`);
     }
     const rawData = await response.json();
     const validatedData = ApiResponseSchema.parse(rawData);
