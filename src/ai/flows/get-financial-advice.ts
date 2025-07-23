@@ -51,21 +51,12 @@ const financialAdvicePrompt = ai.definePrompt({
     }
   },
   prompt: `
-    You're an AI financial advisor.
-    Analyze the user's market and personal financial data.
-    Return ONLY a valid JSON object with the following fields:
+    Analyze all the data and return ONLY a valid JSON object with these keys:
 
     {
-      "recommendations": ["..."],
-      "idealAssetTypes": ["..."],
-      "humor": "..."
-    }
-    
-    Example:
-    {
-      "recommendations": ["Invest in Large Cap MFs", "Avoid new tech IPOs"],
-      "idealAssetTypes": ["Gold", "SIPs", "Index Funds"],
-      "humor": "You spend like Ambani, but your net worth says Sharma Ji ka beta."
+      "recommendations": ["Smart investment ideas tailored to the user"],
+      "idealAssetTypes": ["Types like SIPs, Gold, Stocks, EPF, FD"],
+      "humor": "A sharp Gen-Z-style roast or motivation line"
     }
   `,
 });
