@@ -39,6 +39,12 @@ const nextConfig: NextConfig = {
         hostname: 'image.cnbcfm.com',
         port: '',
         pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.alphavantage.co',
+        port: '',
+        pathname: '/**',
       }
     ],
   },

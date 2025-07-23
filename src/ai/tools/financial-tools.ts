@@ -22,7 +22,7 @@ import {fetchCreditReportAction} from '@/app/dashboard/credit-report/actions';
 export const getStockPriceTool = ai.defineTool(
   {
     name: 'getStockPrice',
-    description: 'Fetches the latest closing stock price for a given Indian stock ISIN from the exchange.',
+    description: 'Fetches the latest stock price for a given Indian stock ISIN from the exchange.',
     inputSchema: z.object({
       isin: z.string().describe('The ISIN of the stock.'),
     }),
@@ -32,64 +32,55 @@ export const getStockPriceTool = ai.defineTool(
     }),
   },
   async ({ isin }) => {
-    const apiKey = process.env.EODHD_API_KEY;
+    const apiKey = process.env.ALPHA_VANTAGE_API_KEY;
     if (!apiKey) {
-      throw new Error("EODHD API key is not configured.");
+      throw new Error("ALPHA_VANTAGE_API_KEY is not configured.");
     }
     
-    // As the user is likely from India, we prioritize Indian exchanges.
-    const exchanges = ['NSE', 'BSE']; 
-
     try {
-      for (const exchange of exchanges) {
-        const tickerListUrl = `https://eodhd.com/api/exchange-symbol-list/${exchange}?api_token=${apiKey}&fmt=json`;
-        const tickerResponse = await fetch(tickerListUrl);
-        
-        if (!tickerResponse.ok) {
-            console.warn(`Could not fetch symbol list for exchange ${exchange}. Status: ${tickerResponse.status}`);
-            continue; // Try next exchange
-        }
+      // Step 1: Search for the symbol using the ISIN
+      const searchUrl = `https://www.alphavantage.co/query?function=SYMBOL_SEARCH&keywords=${isin}&apikey=${apiKey}`;
+      const searchResponse = await fetch(searchUrl);
+      if (!searchResponse.ok) {
+        console.warn(`Alpha Vantage search API failed for ISIN ${isin}. Status: ${searchResponse.status}`);
+        return { price: 0 };
+      }
+      
+      const searchData = await searchResponse.json();
+      const bestMatch = searchData.bestMatches?.[0];
 
-        const tickers = await tickerResponse.json();
-        const matchedTicker = tickers.find((t: any) => t.Isin === isin);
+      if (!bestMatch || !bestMatch['1. symbol']) {
+        console.warn(`No symbol found for ISIN ${isin} on Alpha Vantage.`);
+        return { price: 0 };
+      }
+      
+      const symbol = bestMatch['1. symbol'];
 
-        if (matchedTicker) {
-            const fundamentalsUrl = `https://eodhd.com/api/fundamentals/${matchedTicker.Code}.${exchange}?api_token=${apiKey}&fmt=json&filter=General`;
-            const fundamentalsResponse = await fetch(fundamentalsUrl);
-            
-            if (!fundamentalsResponse.ok) {
-                 console.warn(`Could not fetch fundamentals for ${isin} on exchange ${exchange}. Status: ${fundamentalsResponse.status}`);
-                 continue;
-            }
+      // Step 2: Get the global quote for the found symbol
+      const quoteUrl = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${symbol}&apikey=${apiKey}`;
+      const quoteResponse = await fetch(quoteUrl);
+      if (!quoteResponse.ok) {
+         console.warn(`Alpha Vantage quote API failed for symbol ${symbol}. Status: ${quoteResponse.status}`);
+         return { price: 0 };
+      }
 
-            const fundamentals = await fundamentalsResponse.json();
-            const price = fundamentals?.MarketCapitalizationMln > 0 ? fundamentals?.Valuation?.TrailingPE * fundamentals?.Earnings?.History?.yearly?.[Object.keys(fundamentals.Earnings.History.yearly)[0]]?.epsActual : fundamentals?.Technicals?.previousClose;
-
-
-            if (typeof price === 'number' && price > 0) {
-              return { price };
-            }
+      const quoteData = await quoteResponse.json();
+      const priceString = quoteData?.['Global Quote']?.['05. price'];
+      
+      if (priceString) {
+        const price = parseFloat(priceString);
+        if (!isNaN(price)) {
+          // Note: Alpha Vantage returns prices in local currency of the exchange.
+          // We assume INR for Indian stocks, but this could be enhanced by checking the '4. region' from search.
+          return { price };
         }
       }
       
-      // Fallback to the search API if not found in the primary exchanges
-      const searchUrl = `https://eodhistoricaldata.com/api/search/${isin}?api_token=${apiKey}&fmt=json`;
-      const searchResponse = await fetch(searchUrl);
-      if (searchResponse.ok) {
-          const searchData = await searchResponse.json();
-          const firstResult = searchData?.[0];
-          const price = firstResult?.previousClose;
-           if (typeof price === 'number') {
-            return { price };
-          }
-      }
-
-      console.warn(`Could not find price for ISIN ${isin} on any supported exchange or via search.`);
+      console.warn(`Could not parse price from Alpha Vantage for symbol ${symbol}.`);
       return { price: 0 };
 
     } catch (error) {
-        console.error(`Error in getStockPriceTool for ${isin}:`, error);
-        // Silently fail to avoid breaking the whole analysis if one stock fails
+        console.error(`Error in getStockPriceTool for ISIN ${isin}:`, error);
         return { price: 0 };
     }
   }
