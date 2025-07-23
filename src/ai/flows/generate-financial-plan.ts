@@ -44,7 +44,10 @@ export async function generateFinancialPlan(input: GenerateFinancialPlanInput): 
 const generateFinancialPlanPrompt = ai.definePrompt({
   name: 'generateFinancialPlanPrompt',
   input: {schema: GenerateFinancialPlanInputSchema},
-  output: {schema: GenerateFinancialPlanOutputSchema},
+  output: {
+    schema: GenerateFinancialPlanOutputSchema,
+    format: 'json',
+  },
   prompt: `You are a money-wise best friend, helping a user with their financial goals. Your tone should be smart, witty, helpful, and use desi relatable language. Keep it short and Gen Z-friendly.
 
 User Inputs:
