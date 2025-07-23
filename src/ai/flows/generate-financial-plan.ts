@@ -49,8 +49,12 @@ const generateAllocationPrompt = ai.definePrompt({
     name: 'generateAllocationPrompt',
     input: {schema: GenerateFinancialPlanInputSchema},
     output: {
-        format: 'json',
         schema: AssetAllocationSchema,
+    },
+    config: {
+        response: {
+            format: 'json',
+        }
     },
     prompt: `
         You are a financial planning expert for a user in India.
