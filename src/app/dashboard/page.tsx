@@ -1,0 +1,30 @@
+"use client";
+
+import { FinancialDashboard } from "@/components/FinancialDashboard";
+import { Header } from "@/components/Header";
+import { fetchNetWorthAction } from "@/app/dashboard/actions";
+import { useToast } from "@/hooks/use-toast";
+
+export default function DashboardPage() {
+  const { toast } = useToast();
+
+  const handleDataError = (error: string) => {
+    toast({
+      variant: "destructive",
+      title: "Something went wrong",
+      description: error,
+    });
+  };
+
+  return (
+    <div className="flex flex-col min-h-screen bg-background">
+      <Header />
+      <main className="flex-1 container py-8">
+        <FinancialDashboard 
+          fetchNetWorthAction={fetchNetWorthAction}
+          onDataError={handleDataError}
+        />
+      </main>
+    </div>
+  );
+}
