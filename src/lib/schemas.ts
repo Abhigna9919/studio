@@ -199,12 +199,41 @@ const creditAccountSchema = z.object({
 });
 export type CreditAccount = z.infer<typeof creditAccountSchema>;
 
-const creditReportSchema = z.object({
-  scores: z.array(creditScoreSchema),
-  scoreHistory: z.array(scoreHistorySchema),
-  openAccounts: z.array(creditAccountSchema),
-  closedAccounts: z.array(creditAccountSchema),
+// This schema is based on the new JSON structure
+const experianCreditAccountDetailsSchema = z.object({
+  subscriberName: z.string(),
+  portfolioType: z.string(),
+  accountType: z.string(),
+  openDate: z.string(),
+  highestCreditOrOriginalLoanAmount: z.string(),
+  accountStatus: z.string(),
+  paymentRating: z.string(),
+  paymentHistoryProfile: z.string(),
+  currentBalance: z.string(),
+  amountPastDue: z.string(),
+  dateReported: z.string(),
+  occupationCode: z.string().optional(),
+  rateOfInterest: z.string().optional(),
+  repaymentTenure: z.string(),
+  dateOfAddition: z.string(),
+  currencyCode: z.string(),
+  accountHolderTypeCode: z.string(),
+  creditLimitAmount: z.string().optional()
 });
 
-export const creditReportResponseSchema = creditReportSchema;
+const experianCreditReportDataSchema = z.object({
+    creditAccount: z.object({
+      creditAccountDetails: z.array(experianCreditAccountDetailsSchema),
+    }),
+    score: z.object({
+      bureauScore: z.string(),
+    }),
+});
+
+export const creditReportResponseSchema = z.object({
+    scores: z.array(creditScoreSchema),
+    scoreHistory: z.array(scoreHistorySchema),
+    openAccounts: z.array(creditAccountSchema),
+    closedAccounts: z.array(creditAccountSchema),
+});
 export type CreditReportResponse = z.infer<typeof creditReportResponseSchema>;
