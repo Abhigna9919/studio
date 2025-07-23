@@ -52,7 +52,7 @@ export async function generateFinancialPlan(input: GenerateFinancialPlanInput): 
 
 const generateFinancialPlanPrompt = ai.definePrompt({
   name: 'generateFinancialPlanPrompt',
-  model: 'googleai/gemini-1.5-pro',
+  model: 'googleai/gemini-pro',
   tools: [fetchAmfiNavDataTool, fetchNetWorthTool, fetchMfTransactionsTool, fetchBankTransactionsTool],
   input: {schema: GenerateFinancialPlanInputSchema},
   output: {
