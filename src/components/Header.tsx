@@ -1,4 +1,4 @@
-import { Flame, User, LayoutDashboard, Landmark, FileText, PiggyBank, CandlestickChart, ArrowRightLeft } from "lucide-react";
+import { Flame, User, LayoutDashboard, Landmark, FileText, PiggyBank, CandlestickChart, ArrowRightLeft, Bot } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "./ui/button";
@@ -21,6 +21,12 @@ export function Header() {
               className="transition-colors hover:text-foreground/80 text-foreground/60"
             >
               Dashboard
+            </Link>
+             <Link
+              href="/dashboard/advice"
+              className="transition-colors hover:text-foreground/80 text-foreground/60"
+            >
+              Advice
             </Link>
             <Link
               href="/dashboard/transactions"
