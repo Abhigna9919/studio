@@ -62,8 +62,8 @@ const AnalysisCard = ({ analysis }: { analysis: StockAnalysisOutput }) => {
                  <div>
                     <h4 className="font-semibold mb-2">Sector Allocation</h4>
                     <div className="flex flex-wrap items-center gap-2">
-                         {analysis.sectorAllocation.map(a => (
-                            <Badge key={a.sector} variant="secondary">{a.sector}: {a.percentage}%</Badge>
+                         {analysis.sectorAllocation.map((a, i) => (
+                            <Badge key={a.sector + i} variant="secondary">{a.sector}: {a.percentage}%</Badge>
                          ))}
                     </div>
                 </div>
