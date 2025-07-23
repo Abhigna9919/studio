@@ -237,3 +237,31 @@ export const creditReportResponseSchema = z.object({
     closedAccounts: z.array(creditAccountSchema),
 });
 export type CreditReportResponse = z.infer<typeof creditReportResponseSchema>;
+
+
+// Schemas for EPF Details
+const epfContributionSchema = z.object({
+    month: z.string(),
+    employeeContribution: currencyValueSchema,
+    employerContribution: currencyValueSchema,
+    transactionDate: z.string(),
+});
+export type EpfContribution = z.infer<typeof epfContributionSchema>;
+
+const epfAccountSchema = z.object({
+    memberId: z.string(),
+    establishmentName: z.string(),
+    totalBalance: currencyValueSchema,
+    employeeShare: currencyValueSchema,
+    employerShare: currencyValueSchema,
+    contributions: z.array(epfContributionSchema),
+});
+export type EpfAccount = z.infer<typeof epfAccountSchema>;
+
+export const epfDetailsResponseSchema = z.object({
+    uan: z.string(),
+    name: z.string(),
+    dateOfBirth: z.string(),
+    accounts: z.array(epfAccountSchema),
+});
+export type EpfDetailsResponse = z.infer<typeof epfDetailsResponseSchema>;

@@ -1,4 +1,4 @@
-import { Target, User, LayoutDashboard, Landmark, FileText } from "lucide-react";
+import { Target, User, LayoutDashboard, Landmark, FileText, PiggyBank } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "./ui/button";
@@ -35,6 +35,13 @@ export function Header() {
           >
             <FileText className="h-4 w-4 mr-1" />
             Credit Report
+          </Link>
+          <Link
+            href="/dashboard/epf"
+            className="text-sm font-medium transition-colors hover:text-primary flex items-center"
+          >
+            <PiggyBank className="h-4 w-4 mr-1" />
+            EPF Details
           </Link>
         </nav>
         <div className="flex flex-1 items-center justify-end space-x-4">
