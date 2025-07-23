@@ -30,6 +30,10 @@ const GenerateFinancialPlanInputSchema = z.object({
 export type GenerateFinancialPlanInput = z.infer<typeof GenerateFinancialPlanInputSchema>;
 
 
+const AssetAllocationSchema = z.object({
+    assetAllocation: z.record(z.number()).describe('A map of asset classes to the allocated monthly amount in rupees (e.g., {"Mutual Funds": 7000}).'),
+});
+
 const GenerateFinancialPlanOutputSchema = z.object({
   assetAllocation: z.record(z.string()).describe('A map of asset classes to the allocated monthly amount in rupees (e.g., {"Mutual Funds": "₹7,000"}).'),
   projectedReturns: z.string().describe('The projected value of the investment by the goal deadline (e.g., "₹11.2 Lakhs").'),
@@ -41,41 +45,63 @@ export async function generateFinancialPlan(input: GenerateFinancialPlanInput): 
   return generateFinancialPlanFlow(input);
 }
 
-const generateFinancialPlanPrompt = ai.definePrompt({
-  name: 'generateFinancialPlanPrompt',
-  input: {schema: GenerateFinancialPlanInputSchema},
-  output: {
-    schema: GenerateFinancialPlanOutputSchema,
-  },
-  prompt: `
-    You are a financial planning expert for a user in India.
-    Your tone should be smart, witty, helpful, and use Gen Z-friendly, relatable language.
+const generateAllocationPrompt = ai.definePrompt({
+    name: 'generateAllocationPrompt',
+    input: {schema: GenerateFinancialPlanInputSchema},
+    output: {
+        schema: AssetAllocationSchema,
+    },
+    prompt: `
+        You are a financial planning expert for a user in India.
+        Based on the user's financial goal, risk appetite, and the provided market data, generate a personalized investment plan.
 
-    Based on the user's financial goal, risk appetite, and the provided market data, generate a personalized investment plan.
+        **User Goal:**
+        - Title: {{{goal.title}}}
+        - Target Amount: ₹{{goal.targetAmount}}
+        - Deadline: {{{goal.deadline}}}
+        - Monthly Investment: ₹{{goal.monthlyInvestment}}
+        - Risk Appetite: {{{goal.risk}}}
+        - Existing Investments: {{{mcp_summary}}}
 
-    **User Goal:**
-    - Title: {{{goal.title}}}
-    - Target Amount: ₹{{goal.targetAmount}}
-    - Deadline: {{{goal.deadline}}}
-    - Monthly Investment: ₹{{goal.monthlyInvestment}}
-    - Risk Appetite: {{{goal.risk}}}
-    - Existing Investments: {{{mcp_summary}}}
+        **Market Data:**
+        - Top Mutual Funds: {{{top_mf_data}}}
+        - Top Fixed Deposits: {{{top_fd_data}}}
+        - Gold Price: ₹{{gold_price}}/gram
+        - Top Stocks: {{{top_stock_data}}}
 
-    **Market Data:**
-    - Top Mutual Funds: {{{top_mf_data}}}
-    - Top Fixed Deposits: {{{top_fd_data}}}
-    - Gold Price: ₹{{gold_price}}/gram
-    - Top Stocks: {{{top_stock_data}}}
+        Your only task is to create a JSON object detailing how to allocate the user's monthly investment (₹{{goal.monthlyInvestment}}) across different asset classes (e.g., Mutual Funds, Gold, Fixed Deposit). The sum of allocations must equal the monthly investment.
 
-    **Your Task:**
-    Create a structured JSON output with the following:
-    1.  **assetAllocation**: An object detailing how to allocate the user's monthly investment (₹{{goal.monthlyInvestment}}) across different asset classes (e.g., Mutual Funds, Gold, Fixed Deposit).
-    2.  **projectedReturns**: A string representing the estimated value of the portfolio by the deadline (e.g., "₹11.2 Lakhs").
-    3.  **summary**: A short, witty, and friendly summary of the investment strategy. For example: "Mutual Funds bring growth, Gold hedges inflation, and FD stabilizes things. You’re investing like a pro!"
-
-    Provide only the JSON object as the output.
-`,
+        Provide only the JSON object as the output.
+  `,
 });
+
+
+const generateSummaryPrompt = ai.definePrompt({
+    name: 'generateSummaryPrompt',
+    input: { schema: z.object({ allocation: z.string() }) },
+    output: { schema: z.object({ summary: z.string() }) },
+    prompt: `Based on this asset allocation: {{{allocation}}}, write a short, witty, and friendly summary of the investment strategy. For example: "Mutual Funds bring growth, Gold hedges inflation, and FD stabilizes things. You’re investing like a pro!"`,
+});
+
+
+function calculateProjectedReturns(allocation: Record<string, number>, months: number): string {
+    // Simplified projection logic. A real app would use more complex calculations.
+    const annualGrowthRate = 0.12; // Assume average 12% annual growth
+    const monthlyGrowthRate = Math.pow(1 + annualGrowthRate, 1/12) - 1;
+
+    const monthlyInvestment = Object.values(allocation).reduce((sum, val) => sum + val, 0);
+    
+    let futureValue = 0;
+    for (let i = 0; i < months; i++) {
+        futureValue = (futureValue + monthlyInvestment) * (1 + monthlyGrowthRate);
+    }
+    
+    if (futureValue >= 100000) {
+      return `₹${(futureValue / 100000).toFixed(1)} Lakhs`;
+    }
+    return `₹${Math.round(futureValue).toLocaleString('en-IN')}`;
+}
+
 
 const generateFinancialPlanFlow = ai.defineFlow(
   {
@@ -84,7 +110,36 @@ const generateFinancialPlanFlow = ai.defineFlow(
     outputSchema: GenerateFinancialPlanOutputSchema,
   },
   async input => {
-    const {output} = await generateFinancialPlanPrompt(input);
-    return output!;
+    // Step 1: Get the structured asset allocation from the AI.
+    const { output: allocationOutput } = await generateAllocationPrompt(input);
+    if (!allocationOutput) {
+        throw new Error("Failed to generate asset allocation.");
+    }
+    const { assetAllocation } = allocationOutput;
+
+    // Step 2: Calculate projected returns.
+    const deadline = new Date(input.goal.deadline);
+    const now = new Date();
+    const months = (deadline.getFullYear() - now.getFullYear()) * 12 + (deadline.getMonth() - now.getMonth());
+    const projectedReturns = calculateProjectedReturns(assetAllocation, months);
+
+    // Step 3: Generate the witty summary.
+    const allocationString = JSON.stringify(assetAllocation);
+    const { output: summaryOutput } = await generateSummaryPrompt({ allocation: allocationString });
+    const summary = summaryOutput?.summary || "Your personalized investment plan is ready!";
+
+    // Step 4: Format the final output
+    const formattedAllocation = Object.fromEntries(
+        Object.entries(assetAllocation).map(([key, value]) => [
+            key,
+            `₹${value.toLocaleString('en-IN')}`
+        ])
+    );
+
+    return {
+        assetAllocation: formattedAllocation,
+        projectedReturns,
+        summary,
+    };
   }
 );
