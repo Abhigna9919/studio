@@ -9,16 +9,17 @@ const ActionInputSchema = z.object({
   risk: z.enum(['Low', 'Medium', 'High']),
   goalAmount: z.coerce.number(),
   deadline: z.date(),
-  monthlyIncome: z.coerce.number().optional(), // This can be used to derive monthly investment
+  monthlyIncome: z.coerce.number().optional(),
 });
 
 export async function getFinancialPlanAction(values: z.infer<typeof ActionInputSchema>): Promise<{ success: boolean; plan?: GenerateFinancialPlanOutput; error?: string; }> {
   try {
     const validatedValues = ActionInputSchema.parse(values);
     
-    // For now, let's derive monthly investment from income, or use a default.
-    // This can be replaced with a form field later.
-    const monthlyInvestment = validatedValues.monthlyIncome ? validatedValues.monthlyIncome * 0.3 : 25000;
+    // If monthly income is provided and valid, use it to calculate investment. Otherwise, default to 25000.
+    const monthlyInvestment = (validatedValues.monthlyIncome && validatedValues.monthlyIncome > 0) 
+      ? validatedValues.monthlyIncome * 0.3 
+      : 25000;
 
     const planInput: GenerateFinancialPlanInput = {
       goal: {

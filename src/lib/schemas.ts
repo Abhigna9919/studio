@@ -8,7 +8,7 @@ export const goalFormSchema = z.object({
     required_error: "A deadline is required.",
   }),
   risk: z.enum(['Low', 'Medium', 'High'], { required_error: "Please select your risk appetite." }),
-  monthlyIncome: z.coerce.number().nonnegative({message: "Monthly income must be a positive number."}).optional().or(z.literal('')),
+  monthlyIncome: z.coerce.number().positive({message: "Monthly income must be a positive number."}).optional().or(z.literal('')),
 });
 
 export type GoalFormValues = z.infer<typeof goalFormSchema>;

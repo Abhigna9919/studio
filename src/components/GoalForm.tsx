@@ -31,6 +31,9 @@ export function GoalForm({ onPlanGenerated, onPlanError, getFinancialPlanAction 
 
   const form = useForm<GoalFormValues>({
     resolver: zodResolver(goalFormSchema),
+    defaultValues: {
+      monthlyIncome: ""
+    }
   });
 
   React.useEffect(() => {
