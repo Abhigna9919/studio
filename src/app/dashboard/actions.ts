@@ -36,7 +36,6 @@ export async function fetchNetWorthAction(): Promise<{ success: boolean; data?: 
         headers: {
             'Content-Type': 'application/json',
             'Mcp-Session-Id': `mcp-session-${crypto.randomUUID()}`,
-            // Added User-Agent as it's often required by ngrok/proxies
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         },
         body: JSON.stringify({
@@ -45,30 +44,46 @@ export async function fetchNetWorthAction(): Promise<{ success: boolean; data?: 
             "method":"tools/call",
             "params":{"name":"fetch_net_worth","arguments":{}}
         }),
-        cache: 'no-store' // Important for streaming/dynamic endpoints
+        cache: 'no-store'
     });
 
+    const responseText = await response.text();
+    console.log("Raw API Response Text:", responseText);
+
     if (!response.ok) {
-        const errorText = await response.text();
-        console.error("API Error Response:", errorText);
-        throw new Error(`API request failed with status ${response.status}: ${errorText}`);
+        console.error("API Error Response:", responseText);
+        throw new Error(`API request failed with status ${response.status}: ${responseText}`);
     }
 
-    const rpcResponse = await response.json();
+    let rpcResponse;
+    try {
+        rpcResponse = JSON.parse(responseText);
+    } catch (e) {
+        console.error("Failed to parse response text as JSON:", e);
+        throw new Error(`Invalid JSON received from server: ${responseText}`);
+    }
+
     const validatedRpc = RpcResponseSchema.safeParse(rpcResponse);
 
     if (!validatedRpc.success) {
-      console.error("Invalid RPC response structure:", validatedRpc.error);
+      console.error("Invalid RPC response structure:", validatedRpc.error.flatten());
       throw new Error("Failed to parse the RPC response structure.");
     }
 
     // The 'result' field contains the actual application data as a JSON string.
     // We need to parse this string to get the final data object.
-    const nestedData = JSON.parse(validatedRpc.data.result);
+    let nestedData;
+    try {
+        nestedData = JSON.parse(validatedRpc.data.result);
+    } catch (e) {
+        console.error("Failed to parse nested JSON from 'result' field:", e);
+        throw new Error(`Invalid nested JSON in result: ${validatedRpc.data.result}`);
+    }
+    
     const validatedData = ApiResponseSchema.safeParse(nestedData);
     
     if (!validatedData.success) {
-      console.error("Invalid nested API response structure:", validatedData.error);
+      console.error("Invalid nested API response structure:", validatedData.error.flatten());
       throw new Error("Failed to parse the nested API data.");
     }
 
