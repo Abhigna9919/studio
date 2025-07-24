@@ -274,9 +274,9 @@ export const stockTransactionsResponseSchema = z.object({
 export type StockTransactionsResponse = z.infer<typeof stockTransactionsResponseSchema>;
 
 export const stockAnalysisOutputSchema = z.object({
-    portfolioSummary: z.string().describe("A brief, one-sentence summary of the user's stock portfolio concentration and potential risk."),
+    investorProfile: z.string().describe("A brief, one-sentence summary of the user's investment style based on their holdings (e.g., 'Favors large-cap tech stocks, suggesting a growth-oriented strategy.')."),
     topHoldings: z.array(z.object({
-        stockName: z.string().describe("The name or ISIN of the stock."),
+        stockName: z.string().describe("The name of the stock."),
         investedAmount: z.string().describe("The total estimated amount invested in this stock."),
         currentValue: z.string().describe("The estimated current value of this holding."),
         sector: z.string().describe("The industry sector (e.g., Technology, Banking, FMCG)."),

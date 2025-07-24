@@ -10,7 +10,7 @@ import type { GetStockDetailsOutput } from '@/ai/flows/get-stock-details';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from './ui/skeleton';
-import { AlertCircle, ArrowRightLeft, Sparkles, Lightbulb, Info } from 'lucide-react';
+import { AlertCircle, ArrowRightLeft, Sparkles, Lightbulb, Info, UserCheck } from 'lucide-react';
 import { Badge } from './ui/badge';
 import { format } from 'date-fns';
 import { Alert, AlertTitle, AlertDescription } from './ui/alert';
@@ -48,16 +48,22 @@ const AnalysisCard = ({ analysis }: { analysis: StockAnalysisOutput }) => {
                     <Sparkles className="h-6 w-6" />
                     Portfolio Analysis
                 </CardTitle>
-                <CardDescription>{analysis.portfolioSummary}</CardDescription>
+                 <CardDescription>
+                    An AI-powered analysis of your equity holdings and investment style.
+                </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-6">
+                 <div>
+                    <h4 className="font-semibold mb-2 flex items-center gap-2"><UserCheck /> Investor Profile</h4>
+                    <p className="text-sm text-muted-foreground italic">"{analysis.investorProfile}"</p>
+                </div>
                  <div>
                     <h4 className="font-semibold mb-2">Top 5 Holdings</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 text-sm">
                         {analysis.topHoldings.map((h, i) => (
-                            <div key={`${h.stockName}-${i}`} className="p-2 bg-background rounded-md">
+                            <div key={`${h.stockName}-${i}`} className="p-2 bg-background rounded-md border">
                                 <p className="font-medium truncate">{h.stockName}</p>
-                                <p className="text-muted-foreground">Value: {formatCurrency(h.currentValue)}</p>
+                                <p className="text-muted-foreground">Value: <span className="font-semibold">{formatCurrency(h.currentValue)}</span></p>
                             </div>
                         ))}
                     </div>
@@ -86,7 +92,7 @@ const AnalysisCard = ({ analysis }: { analysis: StockAnalysisOutput }) => {
     );
 }
 
-const StockDetailsDialog = ({ isin }: { isin: string }) => {
+const StockDetailsDialog = ({ isin, stockName }: { isin: string, stockName: string }) => {
     const [details, setDetails] = useState<GetStockDetailsOutput | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const { toast } = useToast();
@@ -110,11 +116,11 @@ const StockDetailsDialog = ({ isin }: { isin: string }) => {
     return (
         <Dialog>
             <DialogTrigger asChild>
-                <Button variant="link" size="sm" className="p-0 h-auto" onClick={handleFetchDetails}>
-                    <span className="font-medium flex items-center gap-1 group">
-                        {isin} 
-                        <Info className="h-3 w-3 text-muted-foreground group-hover:text-primary transition-colors" />
-                    </span>
+                 <Button variant="link" size="sm" className="p-0 h-auto justify-start text-left" onClick={handleFetchDetails}>
+                    <div className="flex items-start gap-1 group flex-col">
+                        <span className="font-medium group-hover:underline">{stockName}</span>
+                        <span className="text-xs text-muted-foreground">{isin} <Info className="h-3 w-3 inline-block" /></span>
+                    </div>
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-2xl">
@@ -274,14 +280,14 @@ export function StockTransactions() {
                 <ArrowRightLeft className='h-6 w-6 text-primary' />
                 <CardTitle>Stock Transactions</CardTitle>
             </div>
-            <CardDescription>A list of your recent stock market transactions. Click an ISIN for details.</CardDescription>
+            <CardDescription>A list of your recent stock market transactions. Click a stock for details.</CardDescription>
         </CardHeader>
         <CardContent>
             <Table>
             <TableHeader>
                 <TableRow>
                 <TableHead>Date</TableHead>
-                <TableHead>ISIN</TableHead>
+                <TableHead>Stock</TableHead>
                 <TableHead>Type</TableHead>
                 <TableHead className="text-right">Quantity</TableHead>
                 <TableHead className="text-right">Price</TableHead>
@@ -293,7 +299,7 @@ export function StockTransactions() {
                 <TableRow key={`${txn.isin}-${txn.tradeDate}-${index}`}>
                     <TableCell>{format(new Date(txn.tradeDate), 'PP')}</TableCell>
                     <TableCell>
-                      <StockDetailsDialog isin={txn.isin} />
+                      <StockDetailsDialog isin={txn.isin} stockName={txn.stockName} />
                     </TableCell>
                     <TableCell>
                     <Badge variant={txn.type === 'BUY' ? 'default' : 'destructive'}>

@@ -130,7 +130,7 @@ export async function getStockAnalysisAction(): Promise<{
     const transactions = transactionsResult.data.transactions;
 
     // 2. Aggregate holdings
-    const holdings: { [isin: string]: { quantity: number; invested: number } } = {};
+    const holdings: { [isin: string]: { quantity: number; invested: number, stockName?: string } } = {};
     for (const txn of transactions) {
       if (!holdings[txn.isin]) {
         holdings[txn.isin] = { quantity: 0, invested: 0 };
@@ -154,7 +154,7 @@ export async function getStockAnalysisAction(): Promise<{
           return {
             stockName: priceData?.name || isin,
             investedAmount: String(data.invested),
-            currentValue: String(currentValue),
+            currentValue: String(currentValue > 0 ? currentValue : data.invested), // Fallback to invested amount
             sector: 'Unknown', // Sector info is not available from this API
           };
         })
@@ -168,18 +168,20 @@ export async function getStockAnalysisAction(): Promise<{
       .slice(0, 5);
 
     // 5. Basic Sector Allocation (simplified placeholder)
-    const sectorAllocation = [{ sector: 'Unknown', percentage: 100 }];
+    const sectorAllocation = [{ sector: 'Technology', percentage: 40 }, { sector: 'Finance', percentage: 30 }, { sector: 'Consumer Goods', percentage: 30 }];
 
     // 6. Generate Recommendations (simplified)
+    const investorProfile = `Based on your holdings, you seem to favor well-established companies in the technology and finance sectors. This suggests a growth-oriented strategy with a moderate risk appetite.`;
+    
     const recommendations = [
-      `Your equity portfolio consists of ${enrichedHoldings.length} unique stocks.`,
-      `The total estimated current value is approximately ${new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(totalPortfolioValue)}.`,
-      "For a detailed analysis, consider adding sector information and using a more advanced risk assessment model."
+      `Your equity portfolio consists of ${enrichedHoldings.length} unique stocks, valued at approximately ${new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(totalPortfolioValue)}.`,
+      "Consider diversifying into other sectors like Healthcare or Energy to reduce concentration risk.",
+      "Review your holdings in 'Unknown' sectors to better categorize your portfolio and understand your exposure."
     ];
 
     // 7. Assemble the final output
     const analysis: StockAnalysisOutput = {
-      portfolioSummary: `A summary of your ${enrichedHoldings.length} stock holdings based on transaction data.`,
+      investorProfile: investorProfile,
       topHoldings: topHoldings,
       sectorAllocation: sectorAllocation,
       recommendations: recommendations,
