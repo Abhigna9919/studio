@@ -11,9 +11,23 @@ function extractAndParseJson(text: string): any {
   }
   
   try {
-    return JSON.parse(jsonMatch[0]);
+    const rpcResponse = JSON.parse(jsonMatch[0]);
+
+    if (rpcResponse.error || !rpcResponse.result || !rpcResponse.result.content) {
+      throw new Error(`RPC error: ${JSON.stringify(rpcResponse.error) || 'Invalid RPC response structure'}`);
+    }
+    
+    const nestedJsonString = rpcResponse.result.content[0]?.text;
+    if (!nestedJsonString) {
+        throw new Error("Could not find nested JSON in the RPC response.");
+    }
+    
+    return JSON.parse(nestedJsonString);
   } catch(e) {
-    throw new Error(`Failed to parse the extracted JSON: ${e}`);
+    if (e instanceof Error) {
+        throw new Error(`Failed to parse the extracted JSON: ${e.message}`);
+    }
+    throw new Error(`Failed to parse the extracted JSON: ${String(e)}`);
   }
 }
 
@@ -64,19 +78,13 @@ export async function fetchBankTransactionsAction(): Promise<{
       );
     }
     
-    const rpcResponse = extractAndParseJson(responseText);
+    const rawData = extractAndParseJson(responseText);
 
-    if (rpcResponse.error || !rpcResponse.result || !rpcResponse.result.content) {
-      throw new Error(`RPC error: ${JSON.stringify(rpcResponse.error) || 'Invalid RPC response structure'}`);
-    }
-    
-    const nestedJsonString = rpcResponse.result.content[0]?.text;
-    if (!nestedJsonString) {
-        throw new Error("Could not find nested JSON in the RPC response.");
+    if (!rawData || !Array.isArray(rawData.bankTransactions)) {
+        throw new Error("Invalid data structure received from API: 'bankTransactions' is not an array or is missing.");
     }
     
     // The actual data is a JSON string within the 'text' field
-    const rawData = JSON.parse(nestedJsonString);
     
     // Now, transform the raw array-based data into the structured format our components expect
     const transformedData: BankTransactionsResponse = {
