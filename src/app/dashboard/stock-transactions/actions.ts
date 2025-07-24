@@ -117,10 +117,10 @@ export async function getStockAnalysisAction(): Promise<{
     const transactions = transactionsResult.data.transactions;
 
     // 2. Aggregate holdings
-    const holdings: { [isin: string]: { quantity: number; invested: number; name: string } } = {};
+    const holdings: { [isin: string]: { quantity: number; invested: number } } = {};
     for (const txn of transactions) {
       if (!holdings[txn.isin]) {
-        holdings[txn.isin] = { quantity: 0, invested: 0, name: '' };
+        holdings[txn.isin] = { quantity: 0, invested: 0 };
       }
       if (txn.type === 'BUY') {
         holdings[txn.isin].quantity += txn.quantity;
