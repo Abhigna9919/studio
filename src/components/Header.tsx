@@ -22,18 +22,6 @@ export function Header() {
             >
               Dashboard
             </Link>
-             <Link
-              href="/dashboard/advice"
-              className="transition-colors hover:text-foreground/80 text-foreground/60"
-            >
-              Advice
-            </Link>
-            <Link
-              href="/dashboard/analysis"
-              className="transition-colors hover:text-foreground/80 text-foreground/60"
-            >
-              Analysis
-            </Link>
             <Link
               href="/dashboard/transactions"
               className="transition-colors hover:text-foreground/80 text-foreground/60"
