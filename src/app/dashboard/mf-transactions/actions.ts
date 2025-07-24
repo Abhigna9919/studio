@@ -74,7 +74,7 @@ export async function fetchMfTransactionsAction(): Promise<{
     
     const rawData = extractAndParseJson(responseText);
 
-    const transactionsList = rawData?.body?.mfTransactions || rawData?.mfTransactions;
+    const transactionsList = rawData?.mfTransactions;
 
     if (!transactionsList || !Array.isArray(transactionsList)) {
         throw new Error("Invalid data structure received from API: mfTransactions is not an array.");

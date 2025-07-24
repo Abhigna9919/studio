@@ -34,7 +34,7 @@ const formatCurrency = (value?: { units?: string | null; nanos?: number | null }
     return new Intl.NumberFormat("en-IN", {
         style: "currency",
         currency: "INR",
-        maximumFractionDigits: 0,
+        maximumFractionDigits: 2,
     }).format(number);
 };
 

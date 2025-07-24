@@ -279,6 +279,7 @@ export const stockAnalysisOutputSchema = z.object({
         stockName: z.string().describe("The name or ISIN of the stock."),
         investedAmount: z.string().describe("The total estimated amount invested in this stock."),
         currentValue: z.string().describe("The estimated current value of this holding."),
+        sector: z.string().describe("The industry sector (e.g., Technology, Banking, FMCG)."),
     })).describe("A list of the top 5 stock holdings by current value."),
     sectorAllocation: z.array(z.object({
         sector: z.string().describe("The industry sector (e.g., Technology, Banking, FMCG)."),
