@@ -2,16 +2,19 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { fetchStockTransactionsAction, getStockAnalysisAction } from '@/app/dashboard/stock-transactions/actions';
+import { fetchStockTransactionsAction, getStockAnalysisAction, getStockDetailsAction } from '@/app/dashboard/stock-transactions/actions';
 import { useToast } from '@/hooks/use-toast';
 import type { StockTransactionsResponse, StockAnalysisOutput } from '@/lib/schemas';
+import type { GetStockDetailsOutput } from '@/ai/flows/get-stock-details';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from './ui/skeleton';
-import { AlertCircle, ArrowRightLeft, Sparkles, Lightbulb } from 'lucide-react';
+import { AlertCircle, ArrowRightLeft, Sparkles, Lightbulb, Info } from 'lucide-react';
 import { Badge } from './ui/badge';
 import { format } from 'date-fns';
 import { Alert, AlertTitle, AlertDescription } from './ui/alert';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from './ui/dialog';
+import { Button } from './ui/button';
 
 const formatCurrency = (value?: { units?: string | null; nanos?: number | null } | string, fallback: string = "N/A") => {
     let numStr: string | undefined | null;
@@ -51,7 +54,7 @@ const AnalysisCard = ({ analysis }: { analysis: StockAnalysisOutput }) => {
                     <h4 className="font-semibold mb-2">Top 5 Holdings</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 text-sm">
                         {analysis.topHoldings.map((h, i) => (
-                            <div key={h.stockName + i} className="p-2 bg-background rounded-md">
+                            <div key={`${h.stockName}-${i}`} className="p-2 bg-background rounded-md">
                                 <p className="font-medium truncate">{h.stockName}</p>
                                 <p className="text-muted-foreground">Value: {formatCurrency(h.currentValue)}</p>
                             </div>
@@ -62,7 +65,7 @@ const AnalysisCard = ({ analysis }: { analysis: StockAnalysisOutput }) => {
                     <h4 className="font-semibold mb-2">Sector Allocation</h4>
                     <div className="flex flex-wrap items-center gap-2">
                          {analysis.sectorAllocation.map((a, i) => (
-                            <Badge key={a.sector + i} variant="secondary">{a.sector}: {a.percentage}%</Badge>
+                            <Badge key={`${a.sector}-${i}`} variant="secondary">{a.sector}: {a.percentage}%</Badge>
                          ))}
                     </div>
                 </div>
@@ -81,6 +84,89 @@ const AnalysisCard = ({ analysis }: { analysis: StockAnalysisOutput }) => {
         </Card>
     );
 }
+
+const StockDetailsDialog = ({ isin }: { isin: string }) => {
+    const [details, setDetails] = useState<GetStockDetailsOutput | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const { toast } = useToast();
+
+    const handleFetchDetails = async () => {
+        if (details) return; // Don't re-fetch if we already have the data
+        setIsLoading(true);
+        const result = await getStockDetailsAction(isin);
+        if (result.success && result.data) {
+            setDetails(result.data);
+        } else {
+            toast({
+                variant: 'destructive',
+                title: 'Failed to fetch stock details',
+                description: result.error,
+            });
+        }
+        setIsLoading(false);
+    };
+
+    return (
+        <Dialog>
+            <DialogTrigger asChild>
+                <Button variant="link" size="sm" className="p-0 h-auto" onClick={handleFetchDetails}>
+                    <span className="font-medium flex items-center gap-1 group">
+                        {isin} 
+                        <Info className="h-3 w-3 text-muted-foreground group-hover:text-primary transition-colors" />
+                    </span>
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-2xl">
+                {isLoading ? (
+                    <div className="space-y-4 py-4">
+                        <Skeleton className="h-8 w-3/4" />
+                        <Skeleton className="h-4 w-1/2" />
+                        <div className="space-y-2 pt-4">
+                           <Skeleton className="h-4 w-full" />
+                           <Skeleton className="h-4 w-full" />
+                           <Skeleton className="h-4 w-5/6" />
+                        </div>
+                        <div className="space-y-2 pt-4">
+                           <Skeleton className="h-4 w-full" />
+                           <Skeleton className="h-4 w-full" />
+                           <Skeleton className="h-4 w-3/4" />
+                        </div>
+                    </div>
+                ) : details ? (
+                    <>
+                        <DialogHeader>
+                            <DialogTitle className="text-2xl">{details.companyName} ({details.stockSymbol})</DialogTitle>
+                             <DialogDescription>{details.isin}</DialogDescription>
+                        </DialogHeader>
+                        <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto pr-4">
+                            <div>
+                                <h3 className="font-semibold mb-2">About the Company</h3>
+                                <p className="text-sm text-muted-foreground">{details.description}</p>
+                            </div>
+                            <div>
+                                <h3 className="font-semibold mb-2">Key Executives</h3>
+                                <ul className="list-disc list-inside text-sm text-muted-foreground">
+                                    {details.keyExecutives.map(exec => <li key={exec}>{exec}</li>)}
+                                </ul>
+                            </div>
+                             <div>
+                                <h3 className="font-semibold mb-2">Recent News</h3>
+                                <p className="text-sm text-muted-foreground">{details.recentNews}</p>
+                            </div>
+                        </div>
+                    </>
+                ) : (
+                    <div className="text-center py-8">
+                        <AlertCircle className="mx-auto h-12 w-12 text-destructive" />
+                        <h3 className="mt-4 text-lg font-medium">Could not load details</h3>
+                        <p className="text-sm text-muted-foreground">There was an error fetching information for this stock.</p>
+                    </div>
+                )}
+            </DialogContent>
+        </Dialog>
+    );
+};
+
 
 export function StockTransactions() {
   const { toast } = useToast();
@@ -181,7 +267,7 @@ export function StockTransactions() {
                 <ArrowRightLeft className='h-6 w-6 text-primary' />
                 <CardTitle>Stock Transactions</CardTitle>
             </div>
-            <CardDescription>A list of your recent stock market transactions.</CardDescription>
+            <CardDescription>A list of your recent stock market transactions. Click an ISIN for details.</CardDescription>
         </CardHeader>
         <CardContent>
             <Table>
@@ -197,9 +283,11 @@ export function StockTransactions() {
             </TableHeader>
             <TableBody>
                 {transactionsData.transactions.map((txn, index) => (
-                <TableRow key={index}>
+                <TableRow key={`${txn.isin}-${txn.tradeDate}-${index}`}>
                     <TableCell>{format(new Date(txn.tradeDate), 'PP')}</TableCell>
-                    <TableCell className="font-medium">{txn.isin}</TableCell>
+                    <TableCell>
+                      <StockDetailsDialog isin={txn.isin} />
+                    </TableCell>
                     <TableCell>
                     <Badge variant={txn.type === 'BUY' ? 'default' : 'destructive'}>
                         {txn.type}

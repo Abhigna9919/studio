@@ -3,6 +3,7 @@
 
 import { stockTransactionsResponseSchema, type StockTransactionsResponse, type StockTransaction, stockAnalysisOutputSchema, type StockAnalysisOutput } from "@/lib/schemas";
 import { getStockPriceTool } from '@/ai/tools/financial-tools';
+import { getStockDetails, type GetStockDetailsOutput } from "@/ai/flows/get-stock-details";
 
 function extractAndParseJson(text: string): any {
   const jsonMatch = text.match(/{.*}/s);
@@ -192,4 +193,18 @@ export async function getStockAnalysisAction(): Promise<{
     console.error("getStockAnalysisAction error:", errorMessage);
     return { success: false, error: `Failed to get stock analysis: ${errorMessage}` };
   }
+}
+
+export async function getStockDetailsAction(isin: string): Promise<{ success: boolean; data?: GetStockDetailsOutput; error?: string; }> {
+    if (!isin) {
+        return { success: false, error: "ISIN is required." };
+    }
+    try {
+        const details = await getStockDetails({ isin });
+        return { success: true, data: details };
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "An unknown error occurred while fetching stock details.";
+        console.error(`getStockDetailsAction for ISIN ${isin} failed:`, errorMessage);
+        return { success: false, error: errorMessage };
+    }
 }
