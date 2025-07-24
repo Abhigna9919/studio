@@ -77,7 +77,13 @@ export async function fetchStockTransactionsAction(): Promise<{
     
     const rawData = extractAndParseJson(responseText);
 
-    const transformedTransactions: StockTransaction[] = rawData.stockTransactions.flatMap((stock: any) => 
+    const transactionsList = rawData?.body?.stockTransactions || rawData?.stockTransactions;
+
+    if (!transactionsList || !Array.isArray(transactionsList)) {
+        throw new Error("Invalid data structure received from API: stockTransactions is not an array.");
+    }
+
+    const transformedTransactions: StockTransaction[] = transactionsList.flatMap((stock: any) => 
         stock.txns.map((txn: any[]) => {
             const quantity = txn[2] || 0;
             const price = txn[3] || 0;
