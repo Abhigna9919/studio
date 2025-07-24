@@ -5,7 +5,7 @@
 import React, { useEffect, useState } from 'react';
 import { fetchStockTransactionsAction, getStockAnalysisAction, getStockDetailsAction } from '@/app/dashboard/stock-transactions/actions';
 import { useToast } from '@/hooks/use-toast';
-import type { StockTransactionsResponse, StockAnalysisOutput } from '@/lib/schemas';
+import type { StockTransactionsResponse, StockAnalysisOutput, StockTransaction } from '@/lib/schemas';
 import type { GetStockDetailsOutput } from '@/ai/flows/get-stock-details';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -118,7 +118,7 @@ const StockDetailsDialog = ({ isin, stockName }: { isin: string, stockName: stri
             <DialogTrigger asChild>
                  <Button variant="link" size="sm" className="p-0 h-auto justify-start text-left" onClick={handleFetchDetails}>
                     <div className="flex items-start gap-1 group flex-col">
-                        <span className="font-medium group-hover:underline">{stockName}</span>
+                        <span className="font-medium group-hover:underline">{stockName || isin}</span>
                         <span className="text-xs text-muted-foreground">{isin} <Info className="h-3 w-3 inline-block" /></span>
                     </div>
                 </Button>
@@ -145,7 +145,7 @@ const StockDetailsDialog = ({ isin, stockName }: { isin: string, stockName: stri
                     <>
                         <DialogHeader>
                             <DialogTitle className="text-2xl">{details.companyName} ({details.stockSymbol})</DialogTitle>
-                             <DialogDescription>{details.isin}</DialogDescription>
+                             <DialogDescription>{isin}</DialogDescription>
                         </DialogHeader>
                         <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto pr-4">
                             <div>
@@ -166,7 +166,7 @@ const StockDetailsDialog = ({ isin, stockName }: { isin: string, stockName: stri
                     </>
                 ) : (
                     <div className="text-center py-8">
-                        <DialogHeader>
+                         <DialogHeader>
                            <DialogTitle className="text-center">Error</DialogTitle>
                            <DialogDescription className="text-center">Could not load stock details.</DialogDescription>
                         </DialogHeader>
@@ -295,11 +295,11 @@ export function StockTransactions() {
                 </TableRow>
             </TableHeader>
             <TableBody>
-                {transactionsData.transactions.map((txn, index) => (
-                <TableRow key={`${txn.isin}-${txn.tradeDate}-${index}`}>
+                {transactionsData.transactions.map((txn: StockTransaction, index: number) => (
+                <TableRow key={`${txn.stockName}-${txn.tradeDate}-${index}`}>
                     <TableCell>{format(new Date(txn.tradeDate), 'PP')}</TableCell>
                     <TableCell>
-                      <StockDetailsDialog isin={txn.isin} stockName={txn.stockName} />
+                      <StockDetailsDialog isin={txn.isin} stockName={txn.stockName || txn.isin} />
                     </TableCell>
                     <TableCell>
                     <Badge variant={txn.type === 'BUY' ? 'default' : 'destructive'}>
