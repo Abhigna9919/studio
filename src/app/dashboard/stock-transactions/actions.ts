@@ -76,17 +76,16 @@ export async function fetchStockTransactionsAction(): Promise<{
     }
     
     const rawData = extractAndParseJson(responseText);
-
-    const transactionsList = rawData?.body?.stockTransactions || rawData?.stockTransactions;
+    const transactionsList = rawData?.stockTransactions;
 
     if (!transactionsList || !Array.isArray(transactionsList)) {
         throw new Error("Invalid data structure received from API: stockTransactions is not an array.");
     }
 
     const transformedTransactions: StockTransaction[] = transactionsList.flatMap((stock: any) => 
-        stock.txns.map((txn: any[]) => {
+        (stock.txns || []).map((txn: any[]) => {
             const quantity = txn[2] || 0;
-            const price = txn[3] || 0;
+            const price = txn[3] || 0; // price (navValue) is at index 3 and is optional
             return {
                 tradeDate: txn[1],
                 stockName: stock.isin, // Stock name not available, using ISIN
@@ -136,6 +135,7 @@ export async function getStockAnalysisAction(): Promise<{
         holdings[txn.isin].quantity += txn.quantity;
         holdings[txn.isin].invested += parseFloat(txn.amount.units || '0');
       } else if (txn.type === 'SELL') {
+        // Simple subtraction of quantity, invested amount is not reduced to keep it simple
         holdings[txn.isin].quantity -= txn.quantity;
       }
     }
@@ -146,12 +146,12 @@ export async function getStockAnalysisAction(): Promise<{
         .filter(([, data]) => data.quantity > 0)
         .map(async ([isin, data]) => {
           const priceData = await getStockPriceTool({ isin });
-          const currentValue = priceData.price * data.quantity;
+          const currentValue = (priceData?.price || 0) * data.quantity;
           return {
-            stockName: priceData.name || isin,
+            stockName: priceData?.name || isin,
             investedAmount: String(data.invested),
             currentValue: String(currentValue),
-            sector: 'Unknown', // Simplified
+            sector: 'Unknown', // Sector info is not available from this API
           };
         })
     );
@@ -163,25 +163,26 @@ export async function getStockAnalysisAction(): Promise<{
       .sort((a, b) => parseFloat(b.currentValue) - parseFloat(a.currentValue))
       .slice(0, 5);
 
-    // 5. Basic Sector Allocation (simplified)
-    const sectorAllocation = [{ sector: 'Unknown', percentage: 100 }]; // Placeholder
+    // 5. Basic Sector Allocation (simplified placeholder)
+    const sectorAllocation = [{ sector: 'Unknown', percentage: 100 }];
 
     // 6. Generate Recommendations (simplified)
     const recommendations = [
-      `Your portfolio is composed of ${enrichedHoldings.length} unique stocks.`,
-      `The total estimated current value of your holdings is approximately ${new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(totalPortfolioValue)}.`,
-      "For a more detailed analysis, consider factors like sector diversification and risk profile, which require more comprehensive data."
+      `Your equity portfolio consists of ${enrichedHoldings.length} unique stocks.`,
+      `The total estimated current value is approximately ${new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(totalPortfolioValue)}.`,
+      "For a detailed analysis, consider adding sector information and using a more advanced risk assessment model."
     ];
 
     // 7. Assemble the final output
     const analysis: StockAnalysisOutput = {
-      portfolioSummary: `A simplified summary of your ${enrichedHoldings.length} stock holdings.`,
+      portfolioSummary: `A summary of your ${enrichedHoldings.length} stock holdings based on transaction data.`,
       topHoldings: topHoldings,
       sectorAllocation: sectorAllocation,
       recommendations: recommendations,
     };
 
-    return { success: true, data: analysis };
+    const validatedData = stockAnalysisOutputSchema.parse(analysis);
+    return { success: true, data: validatedData };
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
