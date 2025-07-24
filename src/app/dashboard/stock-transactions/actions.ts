@@ -85,6 +85,15 @@ export async function fetchStockTransactionsAction(): Promise<{
     if (!transactionsList || !Array.isArray(transactionsList)) {
         throw new Error("Invalid data structure received from API: stockTransactions is not an array.");
     }
+    
+    // Enrich with company names
+    const uniqueIsins = [...new Set(transactionsList.map((stock: any) => stock.isin))];
+    const isinToNameMap: { [key: string]: string } = {};
+    
+    await Promise.all(uniqueIsins.map(async (isin: string) => {
+        const priceData = await getStockPriceTool({ isin });
+        isinToNameMap[isin] = priceData?.name || isin;
+    }));
 
     const transformedTransactions: StockTransaction[] = transactionsList.flatMap((stock: any) => 
         (stock.txns || []).map((txn: any[]) => {
@@ -92,7 +101,7 @@ export async function fetchStockTransactionsAction(): Promise<{
             const price = txn[3] || 0; // price (navValue) is at index 3 and is optional
             return {
                 tradeDate: txn[1],
-                stockName: stock.isin, // Stock name not available, using ISIN
+                stockName: isinToNameMap[stock.isin] || stock.isin,
                 isin: stock.isin,
                 type: getTransactionType(txn[0]),
                 quantity: quantity,
@@ -142,6 +151,7 @@ export async function getStockAnalysisAction(): Promise<{
         // Simple subtraction of quantity, invested amount is not reduced to keep it simple
         holdings[txn.isin].quantity -= txn.quantity;
       }
+      holdings[txn.isin].stockName = txn.stockName;
     }
 
     // 3. Enrich with live data and calculate current value
@@ -152,7 +162,7 @@ export async function getStockAnalysisAction(): Promise<{
           const priceData = await getStockPriceTool({ isin });
           const currentValue = (priceData?.price || 0) * data.quantity;
           return {
-            stockName: priceData?.name || isin,
+            stockName: data.stockName || priceData?.name || isin,
             investedAmount: String(data.invested),
             currentValue: String(currentValue > 0 ? currentValue : data.invested), // Fallback to invested amount
             sector: 'Unknown', // Sector info is not available from this API
