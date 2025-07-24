@@ -2,7 +2,6 @@
 "use server";
 
 import { stockTransactionsResponseSchema, type StockTransactionsResponse, type StockTransaction, stockAnalysisOutputSchema, type StockAnalysisOutput } from "@/lib/schemas";
-import { getStockPriceTool } from '@/ai/tools/financial-tools';
 import { getStockDetails, type GetStockDetailsOutput } from "@/ai/flows/get-stock-details";
 
 function extractAndParseJson(text: string): any {
@@ -88,20 +87,26 @@ export async function fetchStockTransactionsAction(): Promise<{
     
     // Enrich with company names
     const uniqueIsins = [...new Set(transactionsList.map((stock: any) => stock.isin))];
-    const isinToNameMap: { [key: string]: string } = {};
+    const isinToDetailsMap: { [key: string]: GetStockDetailsOutput } = {};
     
     await Promise.all(uniqueIsins.map(async (isin: string) => {
-        const priceData = await getStockPriceTool({ isin });
-        isinToNameMap[isin] = priceData?.name || isin;
+        try {
+            const details = await getStockDetails({ isin });
+            isinToDetailsMap[isin] = details;
+        } catch (error) {
+            console.error(`Could not fetch details for ISIN ${isin}:`, error);
+            // We can still proceed without this stock's details
+        }
     }));
 
     const transformedTransactions: StockTransaction[] = transactionsList.flatMap((stock: any) => 
         (stock.txns || []).map((txn: any[]) => {
             const quantity = txn[2] || 0;
             const price = txn[3] || 0; // price (navValue) is at index 3 and is optional
+            const details = isinToDetailsMap[stock.isin];
             return {
                 tradeDate: txn[1],
-                stockName: isinToNameMap[stock.isin] || stock.isin,
+                stockName: details?.companyName || stock.isin,
                 isin: stock.isin,
                 type: getTransactionType(txn[0]),
                 quantity: quantity,
@@ -159,13 +164,15 @@ export async function getStockAnalysisAction(): Promise<{
       Object.entries(holdings)
         .filter(([, data]) => data.quantity > 0)
         .map(async ([isin, data]) => {
-          const priceData = await getStockPriceTool({ isin });
-          const currentValue = (priceData?.price || 0) * data.quantity;
+          // Since we don't have a reliable price API, we'll use a placeholder logic.
+          // In a real scenario, you'd fetch the current price here.
+          // For now, let's assume current value is just the invested amount.
+          const currentValue = data.invested; // Placeholder
           return {
-            stockName: data.stockName || priceData?.name || isin,
+            stockName: data.stockName || isin,
             investedAmount: String(data.invested),
-            currentValue: String(currentValue > 0 ? currentValue : data.invested), // Fallback to invested amount
-            sector: 'Unknown', // Sector info is not available from this API
+            currentValue: String(currentValue), 
+            sector: 'Unknown', // Sector info would require another data source
           };
         })
     );

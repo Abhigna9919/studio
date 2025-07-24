@@ -9,14 +9,6 @@ export async function getIsinAnalysisAction(): Promise<{
   data?: AnalyzeISINListOutput;
   error?: string;
 }> {
-  const apiKey = process.env.ALPHA_VANTAGE_API_KEY;
-  if (!apiKey) {
-    return {
-      success: false,
-      error: "Alpha Vantage API key is not configured. Please add ALPHA_VANTAGE_API_KEY to your .env file.",
-    };
-  }
-
   try {
     // 1. Fetch transactions to get unique ISINs
     const transactionsResult = await fetchStockTransactionsAction();
@@ -33,7 +25,6 @@ export async function getIsinAnalysisAction(): Promise<{
     // 2. Call the analysis flow
     const analysisResult = await analyzeISINList({
       isins: uniqueIsins,
-      av_api_key: apiKey,
     });
 
     return { success: true, data: analysisResult };
