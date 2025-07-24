@@ -11,7 +11,8 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import { fetchAmfiNavDataTool, fetchBankTransactionsTool, fetchMfTransactionsTool, fetchNetWorthTool } from '../tools/financial-tools';
+import { fetchAmfiNavDataTool, fetchBankTransactionsTool, fetchNetWorthTool } from '../tools/financial-tools';
+import { analyzeMutualFundPortfolio } from './analyze-mf-portfolio';
 
 const GoalSchema = z.object({
   title: z.string().describe('The title of the financial goal (e.g., "Buy a car")'),
@@ -23,6 +24,7 @@ const GoalSchema = z.object({
 
 const GenerateFinancialPlanInputSchema = z.object({
   goal: GoalSchema,
+  mfPortfolioAnalysis: z.string().describe("A JSON string containing the analysis of the user's current mutual fund portfolio."),
 });
 export type GenerateFinancialPlanInput = z.infer<typeof GenerateFinancialPlanInputSchema>;
 
@@ -46,14 +48,24 @@ const GenerateFinancialPlanOutputSchema = z.object({
 });
 export type GenerateFinancialPlanOutput = z.infer<typeof GenerateFinancialPlanOutputSchema>;
 
-export async function generateFinancialPlan(input: GenerateFinancialPlanInput): Promise<GenerateFinancialPlanOutput> {
-  return generateFinancialPlanFlow(input);
+export async function generateFinancialPlan(input: Omit<GenerateFinancialPlanInput, 'mfPortfolioAnalysis'>): Promise<GenerateFinancialPlanOutput> {
+  // 1. Get the MF Portfolio analysis first
+  let mfAnalysis = "User has no existing mutual fund investments.";
+  try {
+      const analysis = await analyzeMutualFundPortfolio();
+      mfAnalysis = JSON.stringify(analysis);
+  } catch (error) {
+      console.error("Could not analyze MF portfolio, proceeding without it.", error);
+  }
+  
+  // 2. Call the main flow with the analysis included
+  return generateFinancialPlanFlow({ ...input, mfPortfolioAnalysis: mfAnalysis });
 }
 
 const generateFinancialPlanPrompt = ai.definePrompt({
   name: 'generateFinancialPlanPrompt',
   model: 'googleai/gemini-1.5-flash',
-  tools: [fetchAmfiNavDataTool, fetchNetWorthTool, fetchMfTransactionsTool, fetchBankTransactionsTool],
+  tools: [fetchAmfiNavDataTool, fetchNetWorthTool, fetchBankTransactionsTool],
   input: {schema: GenerateFinancialPlanInputSchema},
   output: {
     schema: GenerateFinancialPlanOutputSchema,
@@ -69,6 +81,10 @@ const generateFinancialPlanPrompt = ai.definePrompt({
     - Deadline: {{{goal.deadline}}}
     - Monthly Investment Budget: ₹{{{goal.monthlyInvestment}}}
     - Risk Appetite: {{{goal.risk}}}
+
+    USER'S CURRENT MUTUAL FUND PORTFOLIO ANALYSIS:
+    {{{mfPortfolioAnalysis}}}
+
 
     ## TASKS:
 
@@ -99,13 +115,13 @@ const generateFinancialPlanPrompt = ai.definePrompt({
     *   **Inflation Adjustment:** Calculate the goal's future value using a 6.5% annual inflation rate. Populate \`inflationAdjustedTarget\` with this value (e.g., "₹10 Lakhs today will be ₹13.5 Lakhs in 2030").
     *   **Monthly Target:** Calculate the required monthly SIP to reach the inflation-adjusted target. Populate \`requiredMonthlyInvestment\`. Compare this with the user's provided \`monthlyInvestment\` and set \`isUserBudgetSufficient\` to true or false.
     *   **Portfolio Comparison & Recommendation:**
-        *   Analyze the user's existing investments using fetchNetWorthTool and fetchMfTransactionsTool.
+        *   Analyze the user's existing investments using the provided 'USER'S CURRENT MUTUAL FUND PORTFOLIO ANALYSIS' and fetchNetWorthTool.
         *   Create a new, diversified asset allocation plan based on their risk appetite:
             *   **Low Risk:** 60% FD/Liquid MF, 30% Large-Cap MF, 10% Gold.
             *   **Medium Risk:** 50% Multi-Cap MF, 20% FD, 20% Gold, 10% Mid-Cap MF.
             *   **High Risk:** 60% Equity MF (Mid/Small-Cap), 30% Stocks, 10% Gold.
     *   **Build the SIP Plan:** Use the live AMFI data from fetchAmfiNavDataTool to pick specific, top-rated funds that fit the new allocation. For each fund in your recommended \`sipPlan\`, provide the \`fundName\`, monthly SIP \`amount\`, and a sharp \`reason\` (e.g., "Large-cap fund with consistent 14% CAGR, fits your medium-risk profile.").
-    *   **Exhaustive Plan Comparison:** In the \`currentVsSuggestedPlanComparison\` field, provide a detailed and exhaustive explanation. First, summarize the user's current investment strategy based on the data from the financial tools. Then, present the suggested plan and explain *why* it is better. For example: "Your current portfolio is heavily skewed towards high-risk small-cap funds (75%), which is too aggressive for your stated medium-risk appetite. My suggested plan balances this by introducing 30% in stable large-cap funds and 20% in Gold, reducing your overall risk while still capturing growth opportunities. This diversification will provide a smoother journey towards your goal."
+    *   **Exhaustive Plan Comparison:** In the \`currentVsSuggestedPlanComparison\` field, provide a detailed and exhaustive explanation. First, summarize the user's current investment strategy based on the data from the 'USER'S CURRENT MUTUAL FUND PORTFOLIO ANALYSIS'. Then, present the suggested plan and explain *why* it is better. For example: "Your current portfolio is heavily skewed towards high-risk small-cap funds (75%), which is too aggressive for your stated medium-risk appetite. My suggested plan balances this by introducing 30% in stable large-cap funds and 20% in Gold, reducing your overall risk while still capturing growth opportunities. This diversification will provide a smoother journey towards your goal."
     *   **Projection:** Calculate the final projected corpus based on your recommended plan. Populate \`projectedCorpus\`.
     *   **Smart Adjustments:** If the user's budget isn't sufficient, use fetchBankTransactionsTool to check their bank transactions for potential spending cuts and list them in \`transactionAdjustments\`.
 

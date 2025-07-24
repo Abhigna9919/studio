@@ -2,7 +2,7 @@
 "use server";
 
 import { z } from "zod";
-import { generateFinancialPlan, type GenerateFinancialPlanInput, type GenerateFinancialPlanOutput } from "@/ai/flows/generate-financial-plan";
+import { generateFinancialPlan, type GenerateFinancialPlanOutput } from "@/ai/flows/generate-financial-plan";
 import { format } from 'date-fns';
 import { goalFormSchema } from "@/lib/schemas";
 
@@ -15,7 +15,7 @@ export async function getFinancialPlanAction(values: z.infer<typeof goalFormSche
       ? validatedValues.monthlyIncome
       : 25000; // Default to 25000 if not provided or invalid
 
-    const planInput: GenerateFinancialPlanInput = {
+    const planInput = {
       goal: {
         title: validatedValues.title,
         deadline: format(validatedValues.deadline, 'yyyy-MM-dd'),

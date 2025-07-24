@@ -9,3 +9,4 @@ import '@/ai/prompts/comparison-prompt.ts';
 import '@/ai/flows/generate-financial-plan.ts';
 import '@/ai/flows/optimize-financial-plan.ts';
 import '@/ai/flows/get-stock-details.ts';
+import '@/ai/flows/analyze-mf-portfolio.ts';
