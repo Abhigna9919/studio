@@ -2,150 +2,123 @@
 'use server';
 
 /**
- * @fileOverview This file defines a Genkit flow for generating ultra-intelligent, personalized financial plans.
- *
- * - generateFinancialPlan - A function that takes user goals and market data to return a personalized investment plan.
- * - GenerateFinancialPlanInput - The input type for the generateFinancialPlan function.
- * - GenerateFinancialPlanOutput - The return type for the generateFinancialPlan function.
- */
+* @fileOverview This file defines a Genkit flow for generating ultra-intelligent, personalized financial plans for Gen Z users of the Paisa Vasool app.
+*
+* It integrates:
+* * Smart goal classification and inflation-adjusted planning
+* * Rule-based vs. AI-based suggestion balance
+* * Transaction-based lifestyle adjustments
+* * SIP portfolio construction using live AMFI data
+* * Quota-aware Gemini usage
+    */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { ai } from '@/ai/genkit';
+import { z } from 'genkit';
 import { fetchAmfiNavDataTool, fetchBankTransactionsTool, fetchNetWorthTool } from '../tools/financial-tools';
 import { analyzeMutualFundPortfolio } from './analyze-mf-portfolio';
 
 const GoalSchema = z.object({
-  title: z.string().describe('The title of the financial goal (e.g., "Buy a car")'),
-  deadline: z.string().describe('The deadline for achieving the goal (YYYY-MM-DD).'),
-  risk: z.enum(['Low', 'Medium', 'High']).describe('The user\'s risk appetite.'),
-  monthlyInvestment: z.number().describe('The user\'s monthly investment budget.'),
-  targetAmount: z.number().describe('The total target amount for the goal.'),
+title: z.string(),
+deadline: z.string(),
+risk: z.enum(['Low', 'Medium', 'High']),
+monthlyInvestment: z.number(),
+targetAmount: z.number(),
 });
 
 const GenerateFinancialPlanInputSchema = z.object({
-  goal: GoalSchema,
-  mfPortfolioAnalysis: z.string().describe("A JSON string containing the analysis of the user's current mutual fund portfolio."),
+goal: GoalSchema,
+mfPortfolioAnalysis: z.string().describe("JSON string from analyzeMutualFundPortfolio() tool output"),
 });
 export type GenerateFinancialPlanInput = z.infer<typeof GenerateFinancialPlanInputSchema>;
 
-
 const SIPPlanEntrySchema = z.object({
-    fundName: z.string().describe("The specific name of the mutual fund, e.g., 'Axis Bluechip Fund - Direct Growth'"),
-    amount: z.string().describe("The monthly SIP amount for this fund, e.g., '₹3,000'"),
-    reason: z.string().describe("The justification for choosing this fund, e.g., 'Large cap, 12.3% CAGR, ideal for medium-risk.'")
+fundName: z.string(),
+amount: z.string(),
+reason: z.string(),
 });
 
 const GenerateFinancialPlanOutputSchema = z.object({
-    goalType: z.enum(["Short-term", "Long-term"]).describe("The type of goal based on duration and amount."),
-    inflationAdjustedTarget: z.string().describe("The inflation-adjusted target amount, e.g., '₹13.5 Lakhs'").optional(),
-    requiredMonthlyInvestment: z.string().describe("The calculated monthly investment needed to reach the goal.").optional(),
-    isUserBudgetSufficient: z.boolean().describe("Whether the user's provided monthly investment budget is sufficient.").optional(),
-    sipPlan: z.array(SIPPlanEntrySchema).describe("A detailed breakdown of the suggested SIPs across different funds.").optional(),
-    projectedCorpus: z.string().describe("The total projected corpus amount by the goal's deadline.").optional(),
-    transactionAdjustments: z.array(z.string()).describe("A list of suggested lifestyle spending cuts based on transaction history.").optional(),
-    currentVsSuggestedPlanComparison: z.string().describe("A brief comparison of the user's current investment strategy versus the suggested one.").optional(),
-    summary: z.string().describe("A witty, helpful, and motivating summary of the plan for the user."),
+goalType: z.enum(['Short-term', 'Long-term']),
+inflationAdjustedTarget: z.string().optional(),
+requiredMonthlyInvestment: z.string().optional(),
+isUserBudgetSufficient: z.boolean().optional(),
+sipPlan: z.array(SIPPlanEntrySchema).optional(),
+projectedCorpus: z.string().optional(),
+transactionAdjustments: z.array(z.string()).optional(),
+currentVsSuggestedPlanComparison: z.string().optional(),
+summary: z.string(),
 });
 export type GenerateFinancialPlanOutput = z.infer<typeof GenerateFinancialPlanOutputSchema>;
 
 export async function generateFinancialPlan(input: Omit<GenerateFinancialPlanInput, 'mfPortfolioAnalysis'>): Promise<GenerateFinancialPlanOutput> {
-  // 1. Get the MF Portfolio analysis first
-  let mfAnalysis = "User has no existing mutual fund investments.";
-  try {
-      const analysis = await analyzeMutualFundPortfolio();
-      mfAnalysis = JSON.stringify(analysis);
-  } catch (error) {
-      console.error("Could not analyze MF portfolio, proceeding without it.", error);
-  }
-  
-  // 2. Call the main flow with the analysis included
-  return generateFinancialPlanFlow({ ...input, mfPortfolioAnalysis: mfAnalysis });
+let mfAnalysis = "User has no existing mutual fund investments.";
+try {
+const analysis = await analyzeMutualFundPortfolio();
+mfAnalysis = JSON.stringify(analysis);
+} catch (error) {
+console.error("Could not analyze MF portfolio, proceeding without it.", error);
+}
+
+return generateFinancialPlanFlow({ ...input, mfPortfolioAnalysis: mfAnalysis });
 }
 
 const generateFinancialPlanPrompt = ai.definePrompt({
-  name: 'generateFinancialPlanPrompt',
-  model: 'googleai/gemini-1.5-flash',
-  tools: [fetchAmfiNavDataTool, fetchNetWorthTool, fetchBankTransactionsTool],
-  input: {schema: GenerateFinancialPlanInputSchema},
-  output: {
-    schema: GenerateFinancialPlanOutputSchema,
-  },
-  prompt: `
-    You are an AI financial advisor helping an Indian Gen-Z user build an actionable, smart financial plan. Your role is to understand their goal, analyze their financial data, and suggest a clear, friendly, and strategic plan to help them reach it.
+name: 'generateFinancialPlanPrompt',
+model: 'googleai/gemini-1.5-flash',
+tools: [fetchAmfiNavDataTool, fetchNetWorthTool, fetchBankTransactionsTool],
+input: { schema: GenerateFinancialPlanInputSchema },
+output: { schema: GenerateFinancialPlanOutputSchema },
+prompt: `
+You are a witty, highly intelligent financial advisor built for Indian Gen Z users via the Paisa Vasool app. Your job is to analyze their goals, understand their spending behavior, and offer a sharply personalized yet realistic plan.
 
-    (You may assume an inflation rate of 6.5%)
+1. CLASSIFY THE GOAL:
 
-    USER GOAL:
-    - Title: {{{goal.title}}}
-    - Target Amount: ₹{{{goal.targetAmount}}}
-    - Deadline: {{{goal.deadline}}}
-    - Monthly Investment Budget: ₹{{{goal.monthlyInvestment}}}
-    - Risk Appetite: {{{goal.risk}}}
+* Short-term if deadline < 2 years or target < ₹2L
+* Otherwise, Long-term
 
-    USER'S CURRENT MUTUAL FUND PORTFOLIO ANALYSIS:
-    {{{mfPortfolioAnalysis}}}
+2. IF SHORT-TERM:
 
+* Use fetchBankTransactionsTool to find top 3 spend categories
+* Suggest precise savings like "Cut Zomato ₹1,000/month"
+* Do NOT use SIPs; just show how monthly savings can meet the goal
 
-    ## TASKS:
+3. IF LONG-TERM:
 
-    1.  **CLASSIFY THE GOAL:** First, determine if the goal is "Short-term" or "Long-term".
-        *   A goal is "Short-term" if the deadline is less than 2 years away OR the target amount is less than ₹2,00,000.
-        *   Otherwise, it is "Long-term".
-        *   Set the "goalType" field in the output JSON accordingly.
+* Adjust goal for 6.5% annual inflation → inflationAdjustedTarget
 
-    2.  **ANALYZE AND CREATE A PLAN:** Based on the goal classification, follow the appropriate path below.
+* Calculate monthly SIP needed → requiredMonthlyInvestment
 
-    ---
+* Check if user budget is sufficient → isUserBudgetSufficient
 
-    ### **IF THE GOAL IS SHORT-TERM:**
+* Use net worth and existing MF analysis to assess current portfolio
 
-    Your focus is on simple savings and spending adjustments. DO NOT create a complex investment plan (sipPlan and projectedCorpus should be omitted).
+* Build SIP plan using fetchAmfiNavDataTool with rationale per fund
 
-    *   **Analyze Transactions:** Use the fetchBankTransactionsTool to find the user's biggest discretionary spending categories (e.g., Swiggy, Zomato, Uber, Blinkit, Amazon).
-    *   **Suggest Spending Cuts:** Create a list of specific, actionable spending cuts. For example: "Reduce Swiggy orders by ₹1,500/month." Populate the \`transactionAdjustments\` array with these suggestions.
-    *   **Create a Simple Savings Plan:** Calculate how quickly the user can reach their goal by making these cuts. Your summary should be very direct and motivational. Example: "Cut ₹1,500 from Zomato and ₹1,000 from Blinkit, and you'll have your new PlayStation in just 4 months. It's that easy! 🚀"
-    *   Keep the overall plan simple and focused on hitting the immediate target through savings.
+  * Low Risk: FDs, Large-Cap, Liquid
+  * Medium: Multi-Cap, Gold, Mid-Cap
+  * High: Small/Mid-Cap, Stocks, Thematic funds
 
-    ---
+* Add transaction-based cuts if budget is insufficient
 
-    ### **IF THE GOAL IS LONG-TERM:**
+* Compare current vs suggested strategy in simple language
 
-    Your focus is on building a robust, diversified investment portfolio.
+* Project expected corpus → projectedCorpus
 
-    *   **Inflation Adjustment:** Calculate the goal's future value using a 6.5% annual inflation rate. Populate \`inflationAdjustedTarget\` with this value (e.g., "₹10 Lakhs today will be ₹13.5 Lakhs in 2030").
-    *   **Monthly Target:** Calculate the required monthly SIP to reach the inflation-adjusted target. Populate \`requiredMonthlyInvestment\`. Compare this with the user's provided \`monthlyInvestment\` and set \`isUserBudgetSufficient\` to true or false.
-    *   **Portfolio Comparison & Recommendation:**
-        *   Analyze the user's existing investments using the provided 'USER'S CURRENT MUTUAL FUND PORTFOLIO ANALYSIS' and fetchNetWorthTool.
-        *   Create a new, diversified asset allocation plan based on their risk appetite:
-            *   **Low Risk:** 60% FD/Liquid MF, 30% Large-Cap MF, 10% Gold.
-            *   **Medium Risk:** 50% Multi-Cap MF, 20% FD, 20% Gold, 10% Mid-Cap MF.
-            *   **High Risk:** 60% Equity MF (Mid/Small-Cap), 30% Stocks, 10% Gold.
-    *   **Build the SIP Plan:** Use the live AMFI data from fetchAmfiNavDataTool to pick specific, top-rated funds that fit the new allocation. For each fund in your recommended \`sipPlan\`, provide the \`fundName\`, monthly SIP \`amount\`, and a sharp \`reason\` (e.g., "Large-cap fund with consistent 14% CAGR, fits your medium-risk profile.").
-    *   **Exhaustive Plan Comparison:** In the \`currentVsSuggestedPlanComparison\` field, provide a detailed and exhaustive explanation. First, summarize the user's current investment strategy based on the data from the 'USER'S CURRENT MUTUAL FUND PORTFOLIO ANALYSIS'. Then, present the suggested plan and explain *why* it is better. For example: "Your current portfolio is heavily skewed towards high-risk small-cap funds (75%), which is too aggressive for your stated medium-risk appetite. My suggested plan balances this by introducing 30% in stable large-cap funds and 20% in Gold, reducing your overall risk while still capturing growth opportunities. This diversification will provide a smoother journey towards your goal."
-    *   **Projection:** Calculate the final projected corpus based on your recommended plan. Populate \`projectedCorpus\`.
-    *   **Smart Adjustments:** If the user's budget isn't sufficient, use fetchBankTransactionsTool to check their bank transactions for potential spending cuts and list them in \`transactionAdjustments\`.
-
-    ---
-
-    Now, generate the complete JSON output based on these instructions.
+* Write a funny but motivating summary → summary
   `,
-});
-
+  });
 
 const generateFinancialPlanFlow = ai.defineFlow(
-  {
-    name: 'generateFinancialPlanFlow',
-    inputSchema: GenerateFinancialPlanInputSchema,
-    outputSchema: GenerateFinancialPlanOutputSchema,
-  },
-  async input => {
-    const response = await generateFinancialPlanPrompt(input);
-    const planOutput = response.output;
-
-    if (!planOutput) {
-        throw new Error("Failed to generate a financial plan from the AI.");
-    }
-    
-    return planOutput;
-  }
+{
+name: 'generateFinancialPlanFlow',
+inputSchema: GenerateFinancialPlanInputSchema,
+outputSchema: GenerateFinancialPlanOutputSchema,
+},
+async input => {
+const response = await generateFinancialPlanPrompt(input);
+if (!response.output) {
+throw new Error("Failed to generate a financial plan from the AI.");
+}
+return response.output;
+}
 );
