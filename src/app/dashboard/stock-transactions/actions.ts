@@ -1,7 +1,7 @@
 
 "use server";
 
-import { stockTransactionsResponseSchema, type StockTransactionsResponse, type StockTransaction, type StockAnalysisOutput } from "@/lib/schemas";
+import { stockTransactionsResponseSchema, type StockTransactionsResponse, type StockTransaction, stockAnalysisOutputSchema, type StockAnalysisOutput } from "@/lib/schemas";
 import { getStockPriceTool } from '@/ai/tools/financial-tools';
 
 function extractAndParseJson(text: string): any {
@@ -24,7 +24,10 @@ function extractAndParseJson(text: string): any {
     
     return JSON.parse(nestedJsonString);
   } catch(e) {
-    throw new Error(`Failed to parse the extracted JSON: ${e}`);
+    if (e instanceof Error) {
+        throw new Error(`Failed to parse the extracted JSON: ${e.message}`);
+    }
+    throw new Error(`Failed to parse the extracted JSON: ${String(e)}`);
   }
 }
 

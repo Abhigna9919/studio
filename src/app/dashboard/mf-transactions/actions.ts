@@ -27,7 +27,10 @@ function extractAndParseJson(text: string): any {
     return JSON.parse(nestedJsonString);
 
   } catch(e) {
-    throw new Error(`Failed to parse the extracted JSON: ${e}`);
+    if (e instanceof Error) {
+        throw new Error(`Failed to parse the extracted JSON: ${e.message}`);
+    }
+    throw new Error(`Failed to parse the extracted JSON: ${String(e)}`);
   }
 }
 
@@ -73,7 +76,6 @@ export async function fetchMfTransactionsAction(): Promise<{
     }
     
     const rawData = extractAndParseJson(responseText);
-
     const transactionsList = rawData?.mfTransactions;
 
     if (!transactionsList || !Array.isArray(transactionsList)) {
@@ -81,7 +83,7 @@ export async function fetchMfTransactionsAction(): Promise<{
     }
 
     const transformedTransactions: MfTransaction[] = transactionsList.flatMap((fund: any) => 
-        fund.txns.map((txn: any[]) => ({
+        (fund.txns || []).map((txn: any[]) => ({
             date: txn[1],
             schemeName: fund.schemeName,
             folioNumber: fund.folioId,
