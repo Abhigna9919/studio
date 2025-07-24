@@ -22,14 +22,16 @@ import {fetchCreditReportAction} from '@/app/dashboard/credit-report/actions';
 export const getStockPriceTool = ai.defineTool(
   {
     name: 'getStockPrice',
-    description: 'Fetches the latest stock price for a given Indian stock ISIN from the exchange.',
+    description: 'Fetches the latest stock price and details for a given Indian stock ISIN from the exchange.',
     inputSchema: z.object({
       isin: z.string().describe('The ISIN of the stock.'),
     }),
     outputSchema: z.object({
       price: z.number(),
-      currency: z.string().default('INR'),
       name: z.string().optional(),
+      symbol: z.string().optional(),
+      currency: z.string().optional(),
+      region: z.string().optional(),
     }),
   },
   async ({ isin }) => {
@@ -57,6 +59,8 @@ export const getStockPriceTool = ai.defineTool(
       
       const symbol = bestMatch['1. symbol'];
       const name = bestMatch['2. name'];
+      const region = bestMatch['4. region'];
+      const currency = bestMatch['8. currency'];
 
       // Step 2: Get the global quote for the found symbol
       const quoteUrl = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${symbol}&apikey=${apiKey}`;
@@ -72,14 +76,12 @@ export const getStockPriceTool = ai.defineTool(
       if (priceString) {
         const price = parseFloat(priceString);
         if (!isNaN(price)) {
-          // Note: Alpha Vantage returns prices in local currency of the exchange.
-          // We assume INR for Indian stocks, but this could be enhanced by checking the '4. region' from search.
-          return { price, name };
+          return { price, name, symbol, currency, region };
         }
       }
       
       console.warn(`Could not parse price from Alpha Vantage for symbol ${symbol}.`);
-      return { price: 0, name };
+      return { price: 0, name, symbol, currency, region };
 
     } catch (error) {
         console.error(`Error in getStockPriceTool for ISIN ${isin}:`, error);
