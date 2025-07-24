@@ -39,8 +39,12 @@ export async function fetchEpfDetailsAction(): Promise<{
   error?: string;
 }> {
   try {
+    const baseUrl = process.env.NGROK_BASE_URL;
+    if (!baseUrl) {
+      throw new Error("NGROK_BASE_URL is not configured in the environment variables.");
+    }
     const response = await fetch(
-      "https://add852513a89.ngrok-free.app/mcp/stream",
+      `${baseUrl}/mcp/stream`,
       {
         method: "POST",
         headers: {

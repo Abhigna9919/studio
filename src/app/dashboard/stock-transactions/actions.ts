@@ -44,8 +44,12 @@ export async function fetchStockTransactionsAction(): Promise<{
   error?: string;
 }> {
   try {
+    const baseUrl = process.env.NGROK_BASE_URL;
+    if (!baseUrl) {
+      throw new Error("NGROK_BASE_URL is not configured in the environment variables.");
+    }
     const response = await fetch(
-      "https://add852513a89.ngrok-free.app/mcp/stream",
+      `${baseUrl}/mcp/stream`,
       {
         method: "POST",
         headers: {
@@ -158,14 +162,14 @@ export async function getStockAnalysisAction(): Promise<{
 
     // 6. Generate Recommendations (simplified)
     const recommendations = [
-      `Your portfolio has ${enrichedHoldings.length} unique stocks.`,
-      `The total estimated value is ${new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(totalPortfolioValue)}.`,
-      "Consider using a portfolio tracker for more detailed sector and risk analysis."
+      `Your portfolio is composed of ${enrichedHoldings.length} unique stocks.`,
+      `The total estimated current value of your holdings is approximately ${new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(totalPortfolioValue)}.`,
+      "For a more detailed analysis, consider factors like sector diversification and risk profile, which require more comprehensive data."
     ];
 
     // 7. Assemble the final output
     const analysis: StockAnalysisOutput = {
-      portfolioSummary: `A summary of your ${enrichedHoldings.length} stocks.`,
+      portfolioSummary: `A simplified summary of your ${enrichedHoldings.length} stock holdings.`,
       topHoldings: topHoldings,
       sectorAllocation: sectorAllocation,
       recommendations: recommendations,
