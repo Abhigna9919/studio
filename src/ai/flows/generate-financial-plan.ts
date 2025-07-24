@@ -37,12 +37,12 @@ const SIPPlanEntrySchema = z.object({
 
 const GenerateFinancialPlanOutputSchema = z.object({
     goalType: z.enum(["Short-term", "Long-term"]).describe("The type of goal based on duration and amount."),
-    inflationAdjustedTarget: z.string().describe("The inflation-adjusted target amount, e.g., '₹13.5 Lakhs'"),
-    requiredMonthlyInvestment: z.string().describe("The calculated monthly investment needed to reach the goal."),
-    isUserBudgetSufficient: z.boolean().describe("Whether the user's provided monthly investment budget is sufficient."),
+    inflationAdjustedTarget: z.string().describe("The inflation-adjusted target amount, e.g., '₹13.5 Lakhs'").optional(),
+    requiredMonthlyInvestment: z.string().describe("The calculated monthly investment needed to reach the goal.").optional(),
+    isUserBudgetSufficient: z.boolean().describe("Whether the user's provided monthly investment budget is sufficient.").optional(),
     sipPlan: z.array(SIPPlanEntrySchema).describe("A detailed breakdown of the suggested SIPs across different funds.").optional(),
     projectedCorpus: z.string().describe("The total projected corpus amount by the goal's deadline.").optional(),
-    transactionAdjustments: z.array(z.string()).describe("A list of suggested lifestyle spending cuts based on transaction history."),
+    transactionAdjustments: z.array(z.string()).describe("A list of suggested lifestyle spending cuts based on transaction history.").optional(),
     currentVsSuggestedPlanComparison: z.string().describe("A brief comparison of the user's current investment strategy versus the suggested one.").optional(),
     summary: z.string().describe("A witty, helpful, and motivating summary of the plan for the user."),
 });
