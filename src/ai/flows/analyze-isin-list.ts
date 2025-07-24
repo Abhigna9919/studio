@@ -37,7 +37,15 @@ const isinMap: Record<string, { symbol: string; name: string }> = {
     "US0378331005": { symbol: "AAPL", name: "Apple Inc." },
     "US5949181045": { symbol: "MSFT", name: "Microsoft Corporation" },
     "US88160R1014": { symbol: "TSLA", name: "Tesla Inc." },
-    // Add more ISIN mappings here
+    "INE0BWS23018": { symbol: "TCS", name: "Tata Consultancy Services" },
+    "INE040A01034": { symbol: "RELIANCE", name: "Reliance Industries" },
+    "INE916P01025": { symbol: "PAYTM", name: "One97 Communications" },
+    "INE043D01016": { symbol: "BANDHANBNK", name: "Bandhan Bank" },
+    "INE0CCU25019": { symbol: "MOTHERSON", name: "Samvardhana Motherson" },
+    "INE0FDU25010": { symbol: "MOTHERSON", name: "Samvardhana Motherson" },
+    "INE0GGX23010": { symbol: "IDEA", name: "Vodafone Idea" },
+    "INF204KB14I2": { symbol: "AXISBANK", name: "Axis Bank" },
+    "INF204KB14I5": { symbol: "ICICIBANK", name: "ICICI Bank" },
 };
 
 async function fetchJson(url: string) {
@@ -45,7 +53,11 @@ async function fetchJson(url: string) {
     if (!response.ok) {
         throw new Error(`API call failed: ${response.statusText}`);
     }
-    return response.json();
+    const data = await response.json();
+    if (data['Error Message'] || data['Information']) {
+        throw new Error(data['Error Message'] || data['Information']);
+    }
+    return data;
 }
 
 export const analyzeISINList = ai.defineFlow(
@@ -104,9 +116,9 @@ export const analyzeISINList = ai.defineFlow(
 
       } catch (error) {
         if (error instanceof Error) {
-            console.error(`Failed to process ISIN ${isin}: ${error.message}`);
+            console.error(`Failed to process ISIN ${isin} (${symbol}): ${error.message}`);
         } else {
-            console.error(`Failed to process ISIN ${isin}: An unknown error occurred`);
+            console.error(`Failed to process ISIN ${isin} (${symbol}): An unknown error occurred`);
         }
         // Skip this ISIN and continue with others
       }
