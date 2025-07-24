@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useEffect, useState } from 'react';
@@ -119,7 +120,9 @@ const StockDetailsDialog = ({ isin }: { isin: string }) => {
             <DialogContent className="sm:max-w-2xl">
                 {isLoading ? (
                     <div className="space-y-4 py-4">
-                        <Skeleton className="h-8 w-3/4" />
+                        <DialogHeader>
+                            <DialogTitle>Loading Stock Details...</DialogTitle>
+                        </DialogHeader>
                         <Skeleton className="h-4 w-1/2" />
                         <div className="space-y-2 pt-4">
                            <Skeleton className="h-4 w-full" />
@@ -157,7 +160,11 @@ const StockDetailsDialog = ({ isin }: { isin: string }) => {
                     </>
                 ) : (
                     <div className="text-center py-8">
-                        <AlertCircle className="mx-auto h-12 w-12 text-destructive" />
+                        <DialogHeader>
+                           <DialogTitle className="text-center">Error</DialogTitle>
+                           <DialogDescription className="text-center">Could not load stock details.</DialogDescription>
+                        </DialogHeader>
+                        <AlertCircle className="mx-auto h-12 w-12 text-destructive mt-4" />
                         <h3 className="mt-4 text-lg font-medium">Could not load details</h3>
                         <p className="text-sm text-muted-foreground">There was an error fetching information for this stock.</p>
                     </div>
