@@ -19,6 +19,55 @@ import {fetchEpfDetailsAction} from '@/app/dashboard/epf/actions';
 import {fetchCreditReportAction} from '@/app/dashboard/credit-report/actions';
 
 
+const StockProfileSchema = z.object({
+  name: z.string().describe("The name of the company."),
+  ticker: z.string().describe("The stock ticker symbol."),
+  exchange: z.string().describe("The stock exchange the company is listed on."),
+  marketCapitalization: z.number().describe("The market capitalization of the company."),
+  ipo: z.string().describe("The IPO date of the company in YYYY-MM-DD format."),
+  weburl: z.string().url().describe("The company's official website URL.")
+});
+
+export const fetchStockProfileFromFinnhubTool = ai.defineTool(
+    {
+        name: 'fetchStockProfileFromFinnhub',
+        description: 'Fetches the stock profile for a given ISIN from the Finnhub API.',
+        inputSchema: z.object({ isin: z.string() }),
+        outputSchema: StockProfileSchema,
+    },
+    async ({ isin }) => {
+        const apiKey = "d20e6o9r01qog25mg7ggd20e6o9r01qog25mg7h0"; // Per your request
+        const url = `https://finnhub.io/api/v1/stock/profile2?isin=${isin}`;
+        
+        try {
+            const response = await fetch(url, {
+                headers: { 'X-Finnhub-Token': apiKey }
+            });
+
+            if (!response.ok) {
+                throw new Error(`Finnhub API request failed with status ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            if (Object.keys(data).length === 0) {
+                 throw new Error(`No data returned from Finnhub for ISIN ${isin}. It may be an invalid ISIN.`);
+            }
+
+            // Note: Caching logic would be implemented here in a real production environment.
+            // For this prototype, we will call the API every time.
+            
+            return StockProfileSchema.parse(data);
+
+        } catch (error) {
+            console.error(`Error fetching stock profile for ISIN ${isin}:`, error);
+            // Re-throw the error to be handled by the calling flow
+            throw error;
+        }
+    }
+);
+
+
 export const fetchAmfiNavDataTool = ai.defineTool(
   {
     name: 'fetchAmfiNavData',
