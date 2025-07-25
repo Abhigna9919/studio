@@ -106,7 +106,7 @@ export async function fetchStockTransactionsAction(): Promise<{
             const details = isinToDetailsMap[stock.isin];
             return {
                 tradeDate: txn[1],
-                stockName: details?.companyName || stock.isin,
+                stockName: details?.name || stock.isin,
                 isin: stock.isin,
                 type: getTransactionType(txn[0]),
                 quantity: quantity,

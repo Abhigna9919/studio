@@ -10,7 +10,7 @@ import type { GetStockDetailsOutput } from '@/ai/flows/get-stock-details';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from './ui/skeleton';
-import { AlertCircle, ArrowRightLeft, Sparkles, Lightbulb, Info, UserCheck } from 'lucide-react';
+import { AlertCircle, ArrowRightLeft, Sparkles, Lightbulb, Info, UserCheck, LinkIcon } from 'lucide-react';
 import { Badge } from './ui/badge';
 import { format } from 'date-fns';
 import { Alert, AlertTitle, AlertDescription } from './ui/alert';
@@ -39,6 +39,19 @@ const formatCurrency = (value?: { units?: string | null; nanos?: number | null }
         currency: "INR",
     }).format(number);
 };
+
+const formatMarketCap = (value: number) => {
+  if (value >= 1_00_000_00_00_000) {
+    return `₹${(value / 1_00_00_00_00_000).toFixed(2)} T`;
+  }
+  if (value >= 1_00_00_00_000) {
+    return `₹${(value / 1_00_00_00_000).toFixed(2)} B`;
+  }
+  if (value >= 1_00_00_000) {
+    return `₹${(value / 1_00_00_000).toFixed(2)} Cr`;
+  }
+  return `₹${value.toLocaleString('en-IN')}`;
+}
 
 const AnalysisCard = ({ analysis }: { analysis: StockAnalysisOutput }) => {
     return (
@@ -123,7 +136,7 @@ const StockDetailsDialog = ({ isin, stockName }: { isin: string, stockName: stri
                     </div>
                 </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-2xl">
+            <DialogContent className="sm:max-w-xl">
                 {isLoading ? (
                     <div className="space-y-4 py-4">
                         <DialogHeader>
@@ -135,33 +148,34 @@ const StockDetailsDialog = ({ isin, stockName }: { isin: string, stockName: stri
                            <Skeleton className="h-4 w-full" />
                            <Skeleton className="h-4 w-5/6" />
                         </div>
-                        <div className="space-y-2 pt-4">
-                           <Skeleton className="h-4 w-full" />
-                           <Skeleton className="h-4 w-full" />
-                           <Skeleton className="h-4 w-3/4" />
-                        </div>
                     </div>
                 ) : details ? (
                     <>
                         <DialogHeader>
-                            <DialogTitle className="text-2xl">{details.companyName} ({details.stockSymbol})</DialogTitle>
+                            <DialogTitle className="text-2xl">{details.name} ({details.ticker})</DialogTitle>
                              <DialogDescription>{isin}</DialogDescription>
                         </DialogHeader>
-                        <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto pr-4">
-                            <div>
-                                <h3 className="font-semibold mb-2">About the Company</h3>
-                                <p className="text-sm text-muted-foreground">{details.description}</p>
+                        <div className="grid gap-6 py-4 max-h-[60vh] overflow-y-auto pr-4">
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                                <div className="p-3 bg-muted/50 rounded-lg">
+                                    <p className="text-muted-foreground">Market Cap</p>
+                                    <p className="font-semibold">{formatMarketCap(details.marketCapitalization)}</p>
+                                </div>
+                                <div className="p-3 bg-muted/50 rounded-lg">
+                                    <p className="text-muted-foreground">Exchange</p>
+                                    <p className="font-semibold">{details.exchange}</p>
+                                </div>
+                                <div className="p-3 bg-muted/50 rounded-lg">
+                                    <p className="text-muted-foreground">IPO Date</p>
+                                    <p className="font-semibold">{format(new Date(details.ipo), 'dd MMM, yyyy')}</p>
+                                </div>
                             </div>
-                            <div>
-                                <h3 className="font-semibold mb-2">Key Executives</h3>
-                                <ul className="list-disc list-inside text-sm text-muted-foreground">
-                                    {details.keyExecutives.map(exec => <li key={exec}>{exec}</li>)}
-                                </ul>
-                            </div>
-                             <div>
-                                <h3 className="font-semibold mb-2">Recent News</h3>
-                                <p className="text-sm text-muted-foreground">{details.recentNews}</p>
-                            </div>
+                            <Button asChild variant="outline">
+                                <a href={details.weburl} target="_blank" rel="noopener noreferrer">
+                                    <LinkIcon className="mr-2 h-4 w-4" />
+                                    Visit Website
+                                </a>
+                            </Button>
                         </div>
                     </>
                 ) : (

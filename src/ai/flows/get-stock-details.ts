@@ -19,11 +19,12 @@ export type GetStockDetailsInput = z.infer<typeof GetStockDetailsInputSchema>;
 
 
 const GetStockDetailsOutputSchema = z.object({
-    companyName: z.string().describe("The name of the company."),
-    stockSymbol: z.string().describe("The stock ticker symbol."),
-    description: z.string().describe("A detailed description of the company, its business, and market position."),
-    keyExecutives: z.array(z.string()).describe("A list of key executives at the company."),
-    recentNews: z.string().describe("A summary of recent news or developments related to the company.")
+    name: z.string().describe("The name of the company."),
+    ticker: z.string().describe("The stock ticker symbol."),
+    exchange: z.string().describe("The stock exchange the company is listed on."),
+    marketCapitalization: z.number().describe("The market capitalization of the company."),
+    ipo: z.string().describe("The IPO date of the company in YYYY-MM-DD format."),
+    weburl: z.string().url().describe("The company's official website URL.")
 });
 export type GetStockDetailsOutput = z.infer<typeof GetStockDetailsOutputSchema>;
 
@@ -38,14 +39,15 @@ const getStockDetailsPrompt = ai.definePrompt({
   input: { schema: GetStockDetailsInputSchema },
   output: { schema: GetStockDetailsOutputSchema },
   prompt: `
-    You are a senior financial analyst. For the company associated with the ISIN "{{isin}}", provide a detailed report.
+    You are a financial data service. For the company associated with the ISIN "{{isin}}", provide its stock profile.
 
     Based on your knowledge, please provide the following information:
-    - The full company name.
-    - Its primary stock ticker symbol.
-    - A detailed description of the company's business, what it does, and its position in the market.
-    - A list of its key executives (e.g., CEO, CFO).
-    - A brief summary of any major news or developments related to the company in the last 6-12 months.
+    - name: The full company name.
+    - ticker: Its primary stock ticker symbol.
+    - exchange: The primary stock exchange it trades on.
+    - marketCapitalization: The company's market capitalization as a number.
+    - ipo: The IPO date in YYYY-MM-DD format.
+    - weburl: The official company website.
 
     Return the information in the specified JSON format.
   `,
