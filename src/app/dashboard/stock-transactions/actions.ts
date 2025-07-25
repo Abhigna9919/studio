@@ -1,8 +1,9 @@
 
 "use server";
 
-import { stockTransactionsResponseSchema, type StockTransactionsResponse, type StockTransaction, stockAnalysisOutputSchema, type StockAnalysisOutput } from "@/lib/schemas";
+import { stockTransactionsResponseSchema, type StockTransactionsResponse, type StockTransaction, stockAnalysisOutputSchema } from "@/lib/schemas";
 import { getStockDetails, type GetStockDetailsOutput } from "@/ai/flows/get-stock-details";
+import { analyzeStockPortfolio, type StockAnalysisOutput } from "@/ai/flows/analyze-stock-portfolio";
 
 function extractAndParseJson(text: string): any {
   const jsonMatch = text.match(/{.*}/s);
@@ -136,77 +137,8 @@ export async function getStockAnalysisAction(): Promise<{
   error?: string;
 }> {
   try {
-    // 1. Fetch transactions
-    const transactionsResult = await fetchStockTransactionsAction();
-    if (!transactionsResult.success || !transactionsResult.data) {
-      throw new Error(transactionsResult.error || "Failed to fetch stock transactions for analysis.");
-    }
-    const transactions = transactionsResult.data.transactions;
-
-    // 2. Aggregate holdings
-    const holdings: { [isin: string]: { quantity: number; invested: number, stockName?: string } } = {};
-    for (const txn of transactions) {
-      if (!holdings[txn.isin]) {
-        holdings[txn.isin] = { quantity: 0, invested: 0 };
-      }
-      if (txn.type === 'BUY') {
-        holdings[txn.isin].quantity += txn.quantity;
-        holdings[txn.isin].invested += parseFloat(txn.amount.units || '0');
-      } else if (txn.type === 'SELL') {
-        // Simple subtraction of quantity, invested amount is not reduced to keep it simple
-        holdings[txn.isin].quantity -= txn.quantity;
-      }
-      holdings[txn.isin].stockName = txn.stockName;
-    }
-
-    // 3. Enrich with live data and calculate current value
-    const enrichedHoldings = await Promise.all(
-      Object.entries(holdings)
-        .filter(([, data]) => data.quantity > 0)
-        .map(async ([isin, data]) => {
-          // Since we don't have a reliable price API, we'll use a placeholder logic.
-          // In a real scenario, you'd fetch the current price here.
-          // For now, let's assume current value is just the invested amount.
-          const currentValue = data.invested; // Placeholder
-          return {
-            stockName: data.stockName || isin,
-            investedAmount: String(data.invested),
-            currentValue: String(currentValue), 
-            sector: 'Unknown', // Sector info would require another data source
-          };
-        })
-    );
-    
-    const totalPortfolioValue = enrichedHoldings.reduce((sum, h) => sum + parseFloat(h.currentValue), 0);
-    
-    // 4. Determine Top 5 Holdings
-    const topHoldings = enrichedHoldings
-      .sort((a, b) => parseFloat(b.currentValue) - parseFloat(a.currentValue))
-      .slice(0, 5);
-
-    // 5. Basic Sector Allocation (simplified placeholder)
-    const sectorAllocation = [{ sector: 'Technology', percentage: 40 }, { sector: 'Finance', percentage: 30 }, { sector: 'Consumer Goods', percentage: 30 }];
-
-    // 6. Generate Recommendations (simplified)
-    const investorProfile = `Based on your holdings, you seem to favor well-established companies in the technology and finance sectors. This suggests a growth-oriented strategy with a moderate risk appetite.`;
-    
-    const recommendations = [
-      `Your equity portfolio consists of ${enrichedHoldings.length} unique stocks, valued at approximately ${new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(totalPortfolioValue)}.`,
-      "Consider diversifying into other sectors like Healthcare or Energy to reduce concentration risk.",
-      "Review your holdings in 'Unknown' sectors to better categorize your portfolio and understand your exposure."
-    ];
-
-    // 7. Assemble the final output
-    const analysis: StockAnalysisOutput = {
-      investorProfile: investorProfile,
-      topHoldings: topHoldings,
-      sectorAllocation: sectorAllocation,
-      recommendations: recommendations,
-    };
-
-    const validatedData = stockAnalysisOutputSchema.parse(analysis);
-    return { success: true, data: validatedData };
-
+    const result = await analyzeStockPortfolio();
+    return { success: true, data: result };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
     console.error("getStockAnalysisAction error:", errorMessage);
@@ -223,7 +155,6 @@ export async function getStockDetailsAction(isin: string): Promise<{ success: bo
         return { success: true, data: details };
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : "An unknown error occurred while fetching stock details.";
-        console.error(`getStockDetailsAction for ISIN ${isin} failed:`, errorMessage);
         return { success: false, error: errorMessage };
     }
 }
