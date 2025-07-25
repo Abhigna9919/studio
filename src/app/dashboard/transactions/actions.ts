@@ -47,7 +47,7 @@ export async function fetchBankTransactionsAction(): Promise<{
   error?: string;
 }> {
   try {
-    const baseUrl = "https://8ffb7e9f513f.ngrok-free.app";
+    const baseUrl = "https://ada5850b353c.ngrok-free.app";
     if (!baseUrl) {
       throw new Error("NGROK_BASE_URL is not configured in the environment variables.");
     }
