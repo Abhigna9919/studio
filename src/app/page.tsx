@@ -19,6 +19,19 @@ export default function Home() {
   const handlePlanGenerated = (newPlan: GenerateFinancialPlanOutput, formValues: GoalFormValues) => {
     setPlan(newPlan);
     setGoal(formValues);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('userGoal', JSON.stringify(formValues));
+        localStorage.setItem('financialPlan', JSON.stringify(newPlan));
+      } catch (error) {
+        console.error("Failed to save to localStorage", error);
+        toast({
+          variant: "destructive",
+          title: "Could not save your goal",
+          description: "There was an issue saving your goal details to your browser.",
+        });
+      }
+    }
   };
   
   const handleIsLoading = (loading: boolean) => {
