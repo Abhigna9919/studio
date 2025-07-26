@@ -42,13 +42,13 @@ reason: z.string(),
 
 const GenerateFinancialPlanOutputSchema = z.object({
 goalType: z.enum(['Short-term', 'Long-term']),
-inflationAdjustedTarget: z.string().optional(),
-requiredMonthlyInvestment: z.string().optional(),
-isUserBudgetSufficient: z.boolean().optional(),
-sipPlan: z.array(SIPPlanEntrySchema).optional(),
-projectedCorpus: z.string().optional(),
-transactionAdjustments: z.array(z.string()).optional(),
-currentVsSuggestedPlanComparison: z.string().optional(),
+inflationAdjustedTarget: z.string().optional().nullable(),
+requiredMonthlyInvestment: z.string().optional().nullable(),
+isUserBudgetSufficient: z.boolean().optional().nullable(),
+sipPlan: z.array(SIPPlanEntrySchema).optional().nullable(),
+projectedCorpus: z.string().optional().nullable(),
+transactionAdjustments: z.array(z.string()).optional().nullable(),
+currentVsSuggestedPlanComparison: z.string().optional().nullable(),
 summary: z.string(),
 });
 export type GenerateFinancialPlanOutput = z.infer<typeof GenerateFinancialPlanOutputSchema>;
@@ -108,6 +108,7 @@ You are a witty, highly intelligent financial advisor built for Indian Gen Z use
     *   Suggest precise savings targets (e.g., "Cut Zomato spending by ₹1,000/month").
     *   Do NOT create a SIP plan. Just show how monthly savings can meet the goal.
     *   Focus the summary on achieving the goal through savings.
+    *   Set all other optional fields in the output to null or an empty array.
 
 3.  **IF LONG-TERM:**
     *   Adjust the goal for 6.5% annual inflation -> \`inflationAdjustedTarget\`.
