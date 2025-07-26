@@ -18,9 +18,9 @@ export function Header() {
           <nav className="flex items-center gap-4 text-sm lg:gap-6">
             <Link
               href="/dashboard"
-              className="transition-colors hover:text-foreground/80 text-foreground/60"
+              className="transition-colors hover:text-foreground/80 text-foreground"
             >
-              Dashboard
+              Portfolio
             </Link>
             <Link
               href="/dashboard/transactions"
