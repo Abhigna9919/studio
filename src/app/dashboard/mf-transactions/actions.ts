@@ -44,7 +44,7 @@ export async function fetchMfTransactionsAction(): Promise<{
   error?: string;
 }> {
   try {
-    const baseUrl = "https://ada5850b353c.ngrok-free.app";
+    const baseUrl = "https://d291436c9c3e.ngrok-free.app";
     if (!baseUrl) {
       throw new Error("NGROK_BASE_URL is not configured in the environment variables.");
     }
